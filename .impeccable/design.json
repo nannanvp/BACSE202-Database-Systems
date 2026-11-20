@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 2,
+  "name": "BACSE202 Boxed-Software Reference Manual (Acetate Tab Board)",
+  "description": "Open boxed-software reference manual on an oiled-charcoal binder mat with milk-acetate leaves, archival cream section board, and a 7-division stepped fore-edge tab wheel.",
+  "World": {
+    "id": "rw-manual-acetate-tab-board",
+    "label": "Boxed-Software Reference Manual Lying Open At A Tabbed Section",
+    "mode": "operate",
+    "seedKey": "a8c8f5a5f1781d57f5d225c3300174f1",
+    "seedRef": "seed:60f68dd30adeddec"
+  },
+  "Colors": {
+    "surfaceBinder": "#26231E",
+    "surfaceBoard": "#EAE4D7",
+    "surfaceLeaf": "#F4EFE4",
+    "surfaceSheet": "#FAF7F0",
+    "inkPrimary": "#1C1B18",
+    "inkSecondary": "#434038",
+    "inkMuted": "#6E695D",
+    "ruleHairline": "#C5BEB0",
+    "ruleHeavy": "#1C1B18",
+    "tabM1": "#E5B82E",
+    "tabM2": "#E06D2B",
+    "tabM3": "#4F8A3D",
+    "tabM4": "#147E7B",
+    "tabM5": "#22559C",
+    "tabLabs": "#6F539B",
+    "tabMock": "#854D2B",
+    "danger": "#A62B2B"
+  },
+  "Typography": {
+    "fontDisplay": "'Archivo', -apple-system, BlinkMacSystemFont, sans-serif",
+    "fontSerif": "'EB Garamond', Georgia, serif",
+    "fontMono": "'JetBrains Mono', ui-monospace, SFMono-Regular, monospace"
+  },
+  "Shapes": {
+    "sheetRadius": "4px",
+    "badgeRadius": "2px",
+    "tabRadius": "0 6px 6px 0",
+    "punchHoleRadius": "9999px"
+  }
+}

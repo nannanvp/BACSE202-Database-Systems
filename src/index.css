@@ -1,0 +1,249 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "EB Garamond", Georgia, Cambria, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root {
+  /* rw-manual-acetate-tab-board palette tokens */
+  --surface-binder: #26231E;
+  --surface-board: #EAE4D7;
+  --surface-leaf: #F4EFE4;
+  --surface-sheet: #FAF7F0;
+  --surface-well: #E2DBCC;
+
+  --ink-primary: #1C1B18;
+  --ink-secondary: #434038;
+  --ink-muted: #6E695D;
+
+  --rule-hairline: #C5BEB0;
+  --rule-heavy: #1C1B18;
+
+  /* 7-division tab wheel from rw-manual-acetate-tab-board */
+  --tab-yellow: #E5B82E;
+  --tab-orange: #E06D2B;
+  --tab-green: #4F8A3D;
+  --tab-teal: #147E7B;
+  --tab-ultramarine: #22559C;
+  --tab-violet: #6F539B;
+  --tab-sienna: #854D2B;
+
+  /* Dynamic runtime tokens solved per division */
+  --division-accent: #E5B82E;
+  --division-ink: #1C1B18;
+  --leaf-alpha: 0.92;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    color: var(--ink-primary);
+    background-color: var(--surface-board);
+    scroll-behavior: smooth;
+    caret-color: var(--tab-orange);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--tab-yellow);
+    color: var(--ink-primary);
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+  }
+
+  /* Custom themed scrollbars (craft-floor browser surfaces) */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--surface-board);
+    border-left: 1px solid var(--rule-hairline);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #ACA596;
+    border: 2px solid var(--surface-board);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--ink-secondary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ink-primary);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Editorial prose reading measure in Sabon/Garamond manual style */
+.prose-manual {
+  font-family: var(--font-serif);
+  font-size: 1.08rem;
+  line-height: 1.62;
+  max-width: 68ch;
+  color: var(--ink-primary);
+}
+
+.prose-measure {
+  max-width: 72ch;
+}
+
+/* Two-frame 90ms hinged step transition per rw-manual-acetate-tab-board */
+.step-hinge {
+  transition-timing-function: steps(2, end);
+  transition-duration: 90ms;
+}
+
+/* Punched binder hole motif on wide desktop manual margin */
+.binder-hole {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background-color: #D2CBB9;
+  border: 1px solid #B5AEA0;
+  box-shadow: inset 1px 2px 3px rgba(28, 27, 24, 0.22);
+}
+
+/* Subtle Acetate Tab Board topic-mastery confetti & reinforcement motion (compositor-only) */
+@keyframes mastery-confetti-arc {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.45) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+    transform: translate3d(
+        calc(var(--confetti-mid-x) * 0.45),
+        calc(var(--confetti-mid-y) * 0.55),
+        0
+      )
+      scale(1.05)
+      rotate(calc(var(--confetti-rot) * 0.25));
+  }
+  42% {
+    opacity: 1;
+    transform: translate3d(var(--confetti-mid-x), var(--confetti-mid-y), 0)
+      scale(1)
+      rotate(calc(var(--confetti-rot) * 0.58));
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--confetti-end-x), var(--confetti-end-y), 0)
+      scale(0.6)
+      rotate(var(--confetti-rot));
+  }
+}
+
+@keyframes mastery-ring-expand {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.65);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.15);
+  }
+}
+
+@keyframes mastery-check-pop {
+  0% {
+    transform: scale(0.88);
+  }
+  45% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes mastery-toast-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.mastery-confetti-piece {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: mastery-confetti-arc;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+.mastery-ring-pulse {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: mastery-ring-expand 460ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.mastery-check-pop {
+  animation: mastery-check-pop 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mastery-toast-enter {
+  animation: mastery-toast-in 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Clean Printable Formula Cheat Sheet & Exam Sheet Stylesheet */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+  }
+
+  header,
+  nav,
+  aside,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  .print-card {
+    background: #ffffff !important;
+    border: 1px solid #1C1B18 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
