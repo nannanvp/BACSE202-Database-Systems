@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
@@ -35,6 +36,36 @@
   --division-accent: #E5B82E;
   --division-ink: #1C1B18;
   --leaf-alpha: 0.92;
+}
+
+html.dark {
+  color-scheme: dark;
+  /* Impeccable OKLCH warm-tinted obsidian elevation ladder (H ≈ 72°, low chroma ≤ 0.011) */
+  --surface-binder: oklch(15.5% 0.007 72);
+  --surface-board: oklch(19% 0.008 72);
+  --surface-sheet: oklch(23% 0.009 72);
+  --surface-leaf: oklch(26.5% 0.010 72);
+  --surface-well: oklch(15% 0.007 70);
+  --surface-overlay: oklch(24% 0.009 72 / 0.86);
+
+  /* Intentional warm off-white ink ramp (no pure #FFFFFF glare, all ≥ 4.5:1 WCAG AA) */
+  --ink-primary: oklch(91% 0.010 80);
+  --ink-secondary: oklch(76% 0.012 78);
+  --ink-muted: oklch(62% 0.012 76);
+
+  /* Quiet hairline structure */
+  --rule-hairline: oklch(30% 0.009 72);
+  --rule-heavy: oklch(37% 0.010 72);
+
+  /* Desaturated accents (-15% chroma) for calm dark-canvas legibility */
+  --accent-brass: oklch(78% 0.125 84);
+  --accent-brass-hover: oklch(73% 0.125 84);
+  --accent-plum-fill: oklch(49% 0.13 302);
+  --accent-plum-ink: oklch(79% 0.105 302);
+  --accent-blue-ink: oklch(75% 0.105 248);
+  --accent-green-ink: oklch(75% 0.115 148);
+  --accent-red-ink: oklch(71% 0.135 24);
+  --accent-amber-ink: oklch(79% 0.11 76);
 }
 
 @layer base {
@@ -124,6 +155,213 @@
   background-color: #D2CBB9;
   border: 1px solid #B5AEA0;
   box-shadow: inset 1px 2px 3px rgba(28, 27, 24, 0.22);
+}
+
+html.dark .binder-hole {
+  background-color: oklch(14% 0.006 72);
+  border-color: var(--rule-hairline);
+  box-shadow: inset 1px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: oklch(33% 0.010 72);
+  border: 2px solid var(--surface-board);
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(43% 0.011 72);
+}
+
+/* Optical compensation for light-on-dark typography */
+html.dark body {
+  letter-spacing: 0.008em;
+}
+
+/* Impeccable Progressive Lightness Surface Elevation in Dark Mode */
+/* Level 0: Base manual canvas / sticky header / footer */
+html.dark .bg-\[\#EAE4D7\],
+html.dark .bg-\[\#EAE4D7\]\/95,
+html.dark .bg-\[\#EAE4D7\]\/60,
+html.dark .bg-\[\#EAE4D7\]\/55,
+html.dark .bg-\[\#E5DEC9\]\/60,
+html.dark .bg-\[\#E5DEC9\]\/70,
+html.dark .bg-\[\#ded6c6\] {
+  background-color: var(--surface-board);
+}
+
+/* Level 1: Primary cards & sheets (+4% L step over canvas) */
+html.dark .bg-\[\#FAF7F0\],
+html.dark .bg-\[\#FFFFFF\],
+html.dark .bg-white {
+  background-color: var(--surface-sheet);
+}
+
+/* Level 2: Nested sub-panels, stat blocks & interactive wells (+3.5% L step over cards) */
+html.dark .bg-\[\#F4EFE4\],
+html.dark .bg-\[\#F4EFE4\]\/60 {
+  background-color: var(--surface-leaf);
+}
+
+/* Level 3: Frosted glass overlays (FormulaQuickRef) */
+html.dark .formula-glass-panel,
+html.dark .formula-glass-fab {
+  background-color: var(--surface-overlay);
+}
+
+/* Elevated stone-charcoal secondary action buttons (replaces stark black fills) */
+html.dark .bg-\[\#1C1B18\] {
+  background-color: oklch(30% 0.010 72);
+}
+
+/* Recessed warm-obsidian code / SQL / schema wells */
+html.dark main .bg-\[\#26231E\],
+html.dark pre,
+html.dark .code-block-surface {
+  background-color: var(--surface-well);
+  color: var(--ink-primary);
+  border-color: var(--rule-hairline);
+}
+
+html.dark code:not(pre code) {
+  background-color: var(--surface-well);
+  color: var(--ink-primary);
+  border-color: var(--rule-hairline);
+}
+
+html.dark .bg-\[\#FFF3F3\] {
+  background-color: oklch(26% 0.045 24);
+}
+
+/* Warm off-white ink hierarchy (no harsh pure white) */
+html.dark .text-\[\#1C1B18\],
+html.dark .text-\[\#1C1B18\]\/85,
+html.dark .text-\[\#2C2A25\],
+html.dark .text-slate-800 {
+  color: var(--ink-primary);
+}
+
+html.dark .text-\[\#434038\] {
+  color: var(--ink-secondary);
+}
+
+html.dark .text-\[\#6E695D\] {
+  color: var(--ink-muted);
+}
+
+/* Desaturated WCAG-AA semantic inks */
+html.dark .text-\[\#6B21A8\] {
+  color: var(--accent-plum-ink);
+}
+
+html.dark .text-\[\#22559C\] {
+  color: var(--accent-blue-ink);
+}
+
+html.dark .text-\[\#4F8A3D\],
+html.dark .text-\[\#2E5C22\] {
+  color: var(--accent-green-ink);
+}
+
+html.dark .text-\[\#A62B2B\] {
+  color: var(--accent-red-ink);
+}
+
+html.dark .text-\[\#854D2B\] {
+  color: var(--accent-amber-ink);
+}
+
+/* Quiet hairline borders & dividers */
+html.dark .border-\[\#1C1B18\],
+html.dark .border-\[\#1C1B18\]\/70,
+html.dark .border-\[\#1C1B18\]\/60,
+html.dark .border-\[\#1C1B18\]\/40,
+html.dark .border-\[\#1C1B18\]\/30,
+html.dark .border-\[\#1C1B18\]\/25,
+html.dark .border-\[\#1C1B18\]\/20,
+html.dark .border-\[\#1C1B18\]\/15,
+html.dark .border-\[\#C5BEB0\],
+html.dark .border-\[\#EAE4D7\],
+html.dark .border-slate-200 {
+  border-color: var(--rule-hairline);
+}
+
+html.dark .divide-\[\#1C1B18\] > :not(:last-child),
+html.dark .divide-\[\#C5BEB0\] > :not(:last-child) {
+  border-color: var(--rule-hairline);
+}
+
+/* Calm hover elevation */
+html.dark .hover\:bg-\[\#EAE4D7\]:hover,
+html.dark .hover\:bg-\[\#F4EFE4\]:hover,
+html.dark .hover\:bg-\[\#FAF7F0\]:hover {
+  background-color: oklch(30% 0.011 72);
+}
+
+html.dark .hover\:bg-\[\#2C2A25\]:hover {
+  background-color: oklch(35% 0.011 72);
+}
+
+/* Recessed form inputs / selects / textareas */
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark select,
+html.dark textarea {
+  background-color: var(--surface-well);
+  color: var(--ink-primary);
+  border-color: var(--rule-heavy);
+}
+
+/* Desaturated primary brass-yellow & standing-plum fills (no neon glare) */
+html.dark .bg-\[\#E5B82E\] {
+  background-color: var(--accent-brass);
+  color: oklch(17% 0.008 72);
+}
+
+html.dark .hover\:bg-\[\#d8aa22\]:hover,
+html.dark .hover\:bg-\[\#d8ab22\]:hover,
+html.dark .hover\:bg-\[\#d6a920\]:hover {
+  background-color: var(--accent-brass-hover);
+}
+
+html.dark .bg-\[\#6B21A8\] {
+  background-color: var(--accent-plum-fill);
+  color: oklch(95% 0.008 80);
+}
+
+/* Preserve dark high-contrast ink on warm yellow/orange DIVISION_WHEEL surfaces */
+html.dark .bg-\[\#E5B82E\] .text-\[\#1C1B18\],
+html.dark .bg-\[\#E5B82E\] .text-\[\#434038\],
+html.dark .bg-\[\#E06D2B\],
+html.dark .bg-\[\#E06D2B\] .text-\[\#1C1B18\],
+html.dark .bg-\[\#E06D2B\] .text-\[\#434038\],
+html.dark .bg-\[\#d8aa22\],
+html.dark .bg-\[\#d8ab22\],
+html.dark .bg-\[\#d6a920\],
+html.dark [style*="background-color: rgb(229, 184, 46)"],
+html.dark [style*="background-color: rgb(229, 184, 46)"] .text-\[\#1C1B18\],
+html.dark [style*="background-color: rgb(224, 109, 43)"],
+html.dark [style*="background-color: rgb(224, 109, 43)"] .text-\[\#1C1B18\] {
+  color: oklch(17% 0.008 72);
+}
+
+/* Gently temper DIVISION_WHEEL chroma on dark canvas so tabs & module banners stay refined */
+html.dark .fore-edge-tab,
+html.dark .module-accent-bar {
+  filter: saturate(0.84) brightness(0.92);
+}
+
+/* Keep crisp warm-white text on deeper DIVISION_WHEEL headers */
+html.dark .bg-\[\#4F8A3D\] .text-\[\#FAF7F0\],
+html.dark .bg-\[\#147E7B\] .text-\[\#FAF7F0\],
+html.dark .bg-\[\#22559C\] .text-\[\#FAF7F0\],
+html.dark .bg-\[\#6B21A8\] .text-\[\#FAF7F0\],
+html.dark .bg-\[\#A62B2B\] .text-\[\#FAF7F0\] {
+  color: oklch(95% 0.008 80);
+}
+
+/* Keep technical textbook SVG diagrams crisp on a subtle muted paper plate inside dark mode */
+html.dark .diagram-canvas-plate {
+  background-color: oklch(92% 0.012 82);
+  color: #1C1B18;
 }
 
 /* Subtle Acetate Tab Board topic-mastery confetti & reinforcement motion (compositor-only) */

@@ -4,16 +4,32 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { ClipboardCheck, Gauge, Moon, Sun } from 'lucide-react';
+import { StandingView } from './components/StandingView';
 import { SprintPlannerView } from './components/SprintPlannerView';
 import { SyllabusView } from './components/SyllabusView';
 import { ReferenceView } from './components/ReferenceView';
 import { InteractiveLabsView, LabId } from './components/InteractiveLabsView';
-import { FatMockView } from './components/FatMockView';
+import { FatMockView, MockPresetRequest } from './components/FatMockView';
 import { ExamCountdown } from './components/ExamCountdown';
+import { FormulaQuickRef } from './components/FormulaQuickRef';
 import { COURSE_META, FAT_QUESTIONS, MODULES, SPRINT_BLOCKS } from './data/bacse202Data';
+import type { StandingQuestion } from './data/standingData';
 import { TOPIC_NOTES } from './data/topicNotes';
 import { calculateExamReadiness } from './utils/readinessEngine';
 import { FLASHCARD_DECK } from './utils/erFlashcardEngine';
+import {
+  ModuleStandingScore,
+  recordWeakTopicWrong,
+  StandingScoresMap,
+  toggleWeakTopicResolved,
+  WeakTopicEntry,
+} from './utils/standingEngine';
+import {
+  clearResolvedWeakTopics,
+  countUnresolvedWeakTopics,
+  markWeakTopicReviewed,
+} from './utils/weakTopicsEngine';
 import {
   extractRetainedCardIds,
   migrateLegacyKnownIds,
@@ -22,8 +38,15 @@ import {
   SrsProgressMap,
   SrsRating,
 } from './utils/srsEngine';
+import {
+  applyDarkModeClass,
+  DARK_MODE_STORAGE_KEY,
+  parseStoredDarkMode,
+  resolveInitialDarkMode,
+  serializeDarkModePreference,
+} from './utils/darkModeEngine';
 
-type AppView = 'plan' | 'syllabus' | 'reference' | 'labs' | 'mock';
+type AppView = 'standing' | 'plan' | 'syllabus' | 'reference' | 'labs' | 'mock';
 type ModuleId = 'm1' | 'm2' | 'm3' | 'm4' | 'm5';
 
 const STORAGE_KEYS = {
@@ -38,6 +61,11 @@ const STORAGE_KEYS = {
   flashcardSrsMode: 'bacse202_flashcard_srs_mode_v1',
   drillStats: 'bacse202_drill_stats_v1',
   lockedTraps: 'bacse202_traps_locked_v1',
+  standingAnswers: 'bacse202_standing_answers_v1',
+  standingScores: 'bacse202_standing_scores_v1',
+  weakTopics: 'bacse202_weak_topics_v1',
+  pomodoro: 'bacse202_pomodoro_v1',
+  darkMode: DARK_MODE_STORAGE_KEY,
 };
 
 function loadJsonStorage<T>(key: string, fallback: T): T {
@@ -104,7 +132,7 @@ function solveLeafAlpha(boardHex: string, targetLuminance = 0.91): number {
 }
 
 export default function App() {
-  const [activeView, setActiveView] = useState<AppView>('plan');
+  const [activeView, setActiveView] = useState<AppView>('standing');
   const [activeModuleId, setActiveModuleId] = useState<ModuleId>('m1');
   const [activeLab, setActiveLab] = useState<LabId>('normalization');
 
@@ -158,15 +186,72 @@ export default function App() {
   const [lockedTrapIds, setLockedTrapIds] = useState<string[]>(() =>
     loadJsonStorage<string[]>(STORAGE_KEYS.lockedTraps, [])
   );
+  const [standingAnswers, setStandingAnswers] = useState<Record<string, number>>(() =>
+    loadJsonStorage<Record<string, number>>(STORAGE_KEYS.standingAnswers, {})
+  );
+  const [standingScores, setStandingScores] = useState<StandingScoresMap>(() =>
+    loadJsonStorage<StandingScoresMap>(STORAGE_KEYS.standingScores, {})
+  );
+  const [weakTopics, setWeakTopics] = useState<WeakTopicEntry[]>(() =>
+    loadJsonStorage<WeakTopicEntry[]>(STORAGE_KEYS.weakTopics, [])
+  );
+  const [mockPresetRequest, setMockPresetRequest] = useState<MockPresetRequest | null>(null);
   const [focusedTopicId, setFocusedTopicId] = useState<string | null>(null);
   const [openMissedQueueSignal, setOpenMissedQueueSignal] = useState<number>(0);
   const [openFlashcardsSignal, setOpenFlashcardsSignal] = useState<number>(0);
   const [openPlaybookSignal, setOpenPlaybookSignal] = useState<number>(0);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      const storedRaw = window.localStorage.getItem(STORAGE_KEYS.darkMode);
+      const systemPrefersDark = Boolean(
+        window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      );
+      return resolveInitialDarkMode(storedRaw, systemPrefersDark);
+    } catch {
+      return false;
+    }
+  });
+
+  // Sync 'dark' class on <html> and respect OS prefers-color-scheme changes if user hasn't explicitly chosen yet
+  useEffect(() => {
+    applyDarkModeClass(document.documentElement, isDarkMode);
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleSystemChange = (event: MediaQueryListEvent) => {
+      try {
+        const stored = parseStoredDarkMode(window.localStorage.getItem(STORAGE_KEYS.darkMode));
+        if (stored === null) {
+          setIsDarkMode(event.matches);
+        }
+      } catch {
+        setIsDarkMode(event.matches);
+      }
+    };
+    mediaQuery.addEventListener('change', handleSystemChange);
+    return () => mediaQuery.removeEventListener('change', handleSystemChange);
+  }, []);
+
+  const handleToggleDarkMode = () => {
+    setIsDarkMode((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(STORAGE_KEYS.darkMode, serializeDarkModePreference(next));
+      } catch {
+        // Ignore storage quota errors
+      }
+      return next;
+    });
+  };
 
   // Publish solved acetate leaf alpha and active division accent to :root
   useEffect(() => {
     const activeHex =
-      activeView === 'labs'
+      activeView === 'standing'
+        ? '#6B21A8'
+        : activeView === 'labs'
         ? '#6F539B'
         : activeView === 'mock'
         ? '#854D2B'
@@ -268,6 +353,36 @@ export default function App() {
       // Ignore storage quota errors
     }
   }, [lockedTrapIds]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        STORAGE_KEYS.standingAnswers,
+        JSON.stringify(standingAnswers)
+      );
+    } catch {
+      // Ignore storage quota errors
+    }
+  }, [standingAnswers]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        STORAGE_KEYS.standingScores,
+        JSON.stringify(standingScores)
+      );
+    } catch {
+      // Ignore storage quota errors
+    }
+  }, [standingScores]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STORAGE_KEYS.weakTopics, JSON.stringify(weakTopics));
+    } catch {
+      // Ignore storage quota errors
+    }
+  }, [weakTopics]);
 
   const handleRateFlashcard = (cardId: string, rating: SrsRating) => {
     setSrsProgress((prev) => ({
@@ -375,8 +490,71 @@ export default function App() {
   };
 
   const handleSelectAnswer = (questionId: string, optionIndex: number) => {
+    const previousChoice = mockAnswers[questionId];
     setMockAnswers((prev) => ({ ...prev, [questionId]: optionIndex }));
+    if (previousChoice === optionIndex) return;
+    const fatQ = FAT_QUESTIONS.find((q) => q.id === questionId);
+    if (fatQ && optionIndex !== fatQ.correctIndex) {
+      setWeakTopics((prev) =>
+        recordWeakTopicWrong(prev, {
+          questionId: fatQ.id,
+          moduleId: fatQ.moduleId,
+          source: 'mock',
+          prompt: fatQ.prompt,
+        })
+      );
+    }
   };
+
+  const handleRecordStandingAnswer = (
+    question: StandingQuestion,
+    optionIndex: number
+  ) => {
+    setStandingAnswers((prev) => ({ ...prev, [question.id]: optionIndex }));
+    if (optionIndex !== question.correctIndex) {
+      setWeakTopics((prev) =>
+        recordWeakTopicWrong(prev, {
+          questionId: question.id,
+          moduleId: question.moduleId,
+          tier: question.tier,
+          source: 'standing',
+          prompt: question.prompt,
+        })
+      );
+    }
+  };
+
+  const handleResetModuleStandingAnswers = (moduleId: ModuleId) => {
+    const prefix = `s_${moduleId}_`;
+    setStandingAnswers((prev) => {
+      const next: Record<string, number> = {};
+      for (const [k, v] of Object.entries(prev)) {
+        if (!k.startsWith(prefix)) next[k] = v;
+      }
+      return next;
+    });
+  };
+
+  const handleSaveModuleScore = (moduleId: ModuleId, score: ModuleStandingScore) => {
+    setStandingScores((prev) => ({ ...prev, [moduleId]: score }));
+  };
+
+  const handleReviewWeakTopic = (questionId: string) => {
+    setWeakTopics((prev) => markWeakTopicReviewed(prev, questionId));
+  };
+
+  const handleToggleWeakTopicResolved = (questionId: string) => {
+    setWeakTopics((prev) => toggleWeakTopicResolved(prev, questionId));
+  };
+
+  const handleClearResolvedWeakTopics = () => {
+    setWeakTopics((prev) => clearResolvedWeakTopics(prev));
+  };
+
+  const unresolvedWeakCount = useMemo(
+    () => countUnresolvedWeakTopics(weakTopics),
+    [weakTopics]
+  );
 
   const handleSelectSelfCheck = (key: string, optionIdx: number) => {
     setSelfCheckSelections((prev) => ({ ...prev, [key]: optionIdx }));
@@ -420,12 +598,18 @@ export default function App() {
     });
   };
 
-  const navItems: Array<{ id: AppView; label: string }> = [
+  const navItems: Array<{
+    id: AppView;
+    label: string;
+    isStanding?: boolean;
+    isMock?: boolean;
+  }> = [
+    { id: 'standing', label: 'Standing', isStanding: true },
     { id: 'plan', label: '48h Plan' },
     { id: 'syllabus', label: 'Syllabus' },
     { id: 'reference', label: 'Reference' },
     { id: 'labs', label: 'Interactive Labs' },
-    { id: 'mock', label: 'FAT Mock' },
+    { id: 'mock', label: 'FAT Mock', isMock: true },
   ];
 
   const isFullWidthSyllabus = activeView === 'syllabus';
@@ -523,7 +707,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen flex bg-[#26231E] text-[#1C1B18] p-0 xl:p-3">
+    <div className="min-h-screen flex bg-[#26231E] dark:bg-[#100F0D] text-[#1C1B18] dark:text-[#E6E2DA] p-0 xl:p-3 transition-colors duration-200">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2.5 focus:left-4 focus:z-50 focus:px-3.5 focus:py-2 focus:bg-[#E5B82E] focus:text-[#1C1B18] focus:border focus:border-[#1C1B18] focus:text-xs focus:font-mono focus:font-semibold focus:rounded-[4px]"
@@ -532,16 +716,16 @@ export default function App() {
       </a>
 
       {/* Open Manual Section Board */}
-      <div className="flex-1 flex bg-[#EAE4D7] border border-[#1C1B18] rounded-none xl:rounded-l-[6px] min-w-0">
+      <div className="flex-1 flex bg-[#EAE4D7] dark:bg-[#171613] border border-[#1C1B18] dark:border-[#312E29] rounded-none xl:rounded-l-[6px] min-w-0 transition-colors duration-200">
         {/* Left Punched Binder Margin & Folio Stamp (Desktop) */}
         <aside
           aria-hidden="true"
-          className="hidden xl:flex flex-col items-center justify-between py-12 w-11 border-r border-[#C5BEB0] bg-[#E5DEC9]/60 shrink-0 select-none"
+          className="hidden xl:flex flex-col items-center justify-between py-12 w-11 border-r border-[#C5BEB0] dark:border-[#312E29] bg-[#E5DEC9]/60 dark:bg-[#1C1A16] shrink-0 select-none transition-colors duration-200"
         >
           <div className="binder-hole" />
           <div className="binder-hole" />
           <div
-            className="font-mono text-[10px] tracking-[0.22em] text-[#6E695D] uppercase whitespace-nowrap"
+            className="font-mono text-[10px] tracking-[0.22em] text-[#6E695D] dark:text-[#8F897D] uppercase whitespace-nowrap"
             style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
           >
             BACSE202 REFERENCE MANUAL · VER. 2026.11
@@ -552,47 +736,104 @@ export default function App() {
         {/* Primary Manual Sheet Content */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Strict 3-Zone Top Bar Contract */}
-          <header className="sticky top-0 z-30 bg-[#EAE4D7]/95 backdrop-blur-xs border-b border-[#1C1B18]">
-            <div className={`${containerClass} h-14 flex items-center justify-between gap-4 sm:gap-8`}>
+          <header className="sticky top-0 z-30 bg-[#EAE4D7]/95 dark:bg-[#171613]/95 backdrop-blur-xs border-b border-[#1C1B18] dark:border-[#312E29] transition-colors duration-200">
+            <div className={`${containerClass} h-14 flex items-center justify-between gap-2 sm:gap-6`}>
               {/* Zone 1: Single-element Brand Wordmark */}
               <button
                 type="button"
-                onClick={() => setActiveView('plan')}
-                className="text-base sm:text-lg font-display font-extrabold tracking-[0.08em] uppercase text-[#1C1B18] whitespace-nowrap shrink-0 rounded-[3px]"
+                onClick={() => setActiveView('standing')}
+                className="text-sm sm:text-lg font-display font-extrabold tracking-[0.05em] sm:tracking-[0.08em] uppercase text-[#1C1B18] dark:text-[#E6E2DA] whitespace-nowrap shrink-0 rounded-[3px]"
               >
                 BACSE202 Sprint
               </button>
 
-              {/* Zone 2: 5 single-line text nav links */}
-              <nav aria-label="Primary navigation" className="hidden md:flex items-center gap-6">
+              {/* Zone 2: Single-line text nav links (Standing first with #6B21A8 accent) */}
+              <nav aria-label="Primary navigation" className="hidden md:flex items-center gap-4 lg:gap-5">
                 {navItems.map((item) => {
                   const isActive = activeView === item.id;
+                  const activeBorder = item.isStanding
+                    ? 'text-[#6B21A8] font-bold border-[#6B21A8]'
+                    : 'text-[#1C1B18] font-semibold border-[#1C1B18]';
+                  const idleStyle = item.isStanding
+                    ? 'text-[#6B21A8] border-transparent hover:border-[#6B21A8]/50 font-semibold'
+                    : 'text-[#434038] border-transparent hover:text-[#1C1B18]';
                   return (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => setActiveView(item.id)}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`py-1 text-xs font-mono uppercase tracking-[0.08em] step-hinge whitespace-nowrap shrink-0 border-b-2 ${
-                        isActive
-                          ? 'text-[#1C1B18] font-semibold border-[#1C1B18]'
-                          : 'text-[#434038] border-transparent hover:text-[#1C1B18]'
+                      aria-label={
+                        item.isMock && unresolvedWeakCount > 0
+                          ? `FAT Mock (${unresolvedWeakCount} unresolved weak topics)`
+                          : undefined
+                      }
+                      title={
+                        item.isMock && unresolvedWeakCount > 0
+                          ? `FAT Mock (${unresolvedWeakCount} unresolved weak topics)`
+                          : undefined
+                      }
+                      className={`inline-flex items-center ${
+                        item.isMock && unresolvedWeakCount > 0 ? 'gap-2.5' : 'gap-1.5'
+                      } py-1 text-xs font-mono uppercase tracking-[0.08em] step-hinge whitespace-nowrap shrink-0 border-b-2 ${
+                        isActive ? activeBorder : idleStyle
                       }`}
                     >
-                      {item.label}
+                      {item.isStanding && (
+                        <Gauge className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      )}
+                      {item.isMock && (
+                        <span className="relative inline-flex items-center shrink-0">
+                          <ClipboardCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                          {unresolvedWeakCount > 0 && (
+                            <span
+                              data-testid="nav-weak-topics-badge"
+                              aria-hidden="true"
+                              className="absolute -top-2 -right-2.5 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-600 text-white text-[9px] font-mono font-extrabold leading-none inline-flex items-center justify-center border border-[#FAF7F0] tabular-nums"
+                            >
+                              {unresolvedWeakCount}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      <span>{item.label}</span>
                     </button>
                   );
                 })}
               </nav>
 
-              {/* Zone 3: 1 primary CTA (Chrome Yellow manual action button) */}
-              <div className="flex items-center shrink-0">
+              {/* Zone 3: Dark Mode Toggle + Primary CTA */}
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <button
+                  type="button"
+                  data-testid="dark-mode-toggle"
+                  onClick={handleToggleDarkMode}
+                  aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                  aria-pressed={isDarkMode}
+                  title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                  className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-[#FAF7F0] dark:bg-[#201E1A] hover:bg-[#F4EFE4] dark:hover:bg-[#2A2722] border border-[#1C1B18] dark:border-[#3A3731] rounded-[4px] step-hinge shrink-0"
+                >
+                  {isDarkMode ? (
+                    <Sun className="w-4 h-4 text-[#D8B048]" aria-hidden="true" />
+                  ) : (
+                    <Moon className="w-4 h-4 text-[#1C1B18]" aria-hidden="true" />
+                  )}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setActiveView('mock')}
-                  className="px-4 py-2 text-xs font-mono font-semibold uppercase tracking-[0.06em] text-[#1C1B18] bg-[#E5B82E] hover:bg-[#d8aa22] border border-[#1C1B18] rounded-[4px] step-hinge whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-mono font-semibold uppercase tracking-[0.05em] sm:tracking-[0.06em] text-[#1C1B18] bg-[#E5B82E] hover:bg-[#d8aa22] border border-[#1C1B18] dark:border-[#3A3731] rounded-[4px] step-hinge whitespace-nowrap shrink-0"
                 >
-                  Start FAT Mock →
+                  <span>Start FAT Mock →</span>
+                  {unresolvedWeakCount > 0 && (
+                    <span
+                      aria-hidden="true"
+                      className="md:hidden min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-mono font-extrabold leading-none inline-flex items-center justify-center tabular-nums"
+                    >
+                      {unresolvedWeakCount}
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
@@ -611,13 +852,37 @@ export default function App() {
                   type="button"
                   onClick={() => setActiveView(item.id)}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider rounded-[3px] whitespace-nowrap shrink-0 border ${
+                  aria-label={
+                    item.isMock && unresolvedWeakCount > 0
+                      ? `FAT Mock (${unresolvedWeakCount} unresolved weak topics)`
+                      : undefined
+                  }
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider rounded-[3px] whitespace-nowrap shrink-0 border ${
                     isActive
-                      ? 'bg-[#E5B82E] text-[#1C1B18] border-[#1C1B18] font-semibold'
+                      ? item.isStanding
+                        ? 'bg-[#6B21A8] text-[#FAF7F0] border-[#1C1B18] font-semibold'
+                        : 'bg-[#E5B82E] text-[#1C1B18] border-[#1C1B18] font-semibold'
+                      : item.isStanding
+                      ? 'bg-transparent text-[#6B21A8] border-[#6B21A8]/40 font-semibold'
                       : 'bg-transparent text-[#434038] border-transparent hover:border-[#C5BEB0]'
                   }`}
                 >
-                  {item.label}
+                  {item.isStanding && (
+                    <Gauge className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  )}
+                  {item.isMock && (
+                    <ClipboardCheck className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  )}
+                  <span>{item.label}</span>
+                  {item.isMock && unresolvedWeakCount > 0 && (
+                    <span
+                      data-testid="mobile-nav-weak-topics-badge"
+                      aria-hidden="true"
+                      className="min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-mono font-extrabold leading-none inline-flex items-center justify-center tabular-nums"
+                    >
+                      {unresolvedWeakCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -628,8 +893,50 @@ export default function App() {
               <ExamCountdown variant="compact" onOpenPlan={() => setActiveView('plan')} />
             )}
 
+            {activeView === 'standing' && (
+              <StandingView
+                divisionColors={DIVISION_WHEEL}
+                standingAnswers={standingAnswers}
+                standingScores={standingScores}
+                weakTopics={weakTopics}
+                onRecordStandingAnswer={handleRecordStandingAnswer}
+                onResetModuleStandingAnswers={handleResetModuleStandingAnswers}
+                onSaveModuleScore={handleSaveModuleScore}
+                onReviewWeakTopic={handleReviewWeakTopic}
+                onToggleWeakTopicResolved={handleToggleWeakTopicResolved}
+                onClearResolvedWeakTopics={handleClearResolvedWeakTopics}
+                onGoToNotes={(modId) => {
+                  setActiveModuleId(modId);
+                  setActiveView('syllabus');
+                }}
+                onGoToLabs={(modId) => {
+                  const mod = MODULES.find((m) => m.id === modId);
+                  setActiveLab(mod?.recommendedLab ?? 'integrity');
+                  setActiveView('labs');
+                }}
+                onGoToMock={(modId) => {
+                  setMockPresetRequest({
+                    subView: 'mcq',
+                    moduleId: modId,
+                    nonce: Date.now(),
+                  });
+                  setActiveView('mock');
+                }}
+                onReviewWeakTopics={(modId) => {
+                  setMockPresetRequest({
+                    subView: 'weak_topics',
+                    moduleId: modId ?? 'all',
+                    nonce: Date.now(),
+                  });
+                  setActiveView('mock');
+                }}
+              />
+            )}
+
             {activeView === 'plan' && (
               <SprintPlannerView
+                activeModuleId={activeModuleId}
+                divisionColors={DIVISION_WHEEL}
                 completedBlockIds={completedBlockIds}
                 masteredTopicIds={masteredTopicIds}
                 readiness={examReadiness}
@@ -686,6 +993,7 @@ export default function App() {
             {activeView === 'reference' && (
               <ReferenceView
                 activeModuleId={activeModuleId}
+                divisionColors={DIVISION_WHEEL}
                 onSelectModule={setActiveModuleId}
                 onNavigateToSyllabus={(modId) => {
                   setActiveModuleId(modId);
@@ -725,6 +1033,12 @@ export default function App() {
                 rubricScores={rubricScores}
                 onSetRubricScore={handleSetRubricScore}
                 onResetRubricScores={handleResetRubricScores}
+                weakTopics={weakTopics}
+                divisionColors={DIVISION_WHEEL}
+                onReviewWeakTopic={handleReviewWeakTopic}
+                onToggleWeakTopicResolved={handleToggleWeakTopicResolved}
+                onClearResolvedWeakTopics={handleClearResolvedWeakTopics}
+                presetRequest={mockPresetRequest}
                 onNavigateToTopic={(modId, topicId) => {
                   setActiveModuleId(modId);
                   setFocusedTopicId(topicId);
@@ -757,7 +1071,7 @@ export default function App() {
             onClick={tab.onClick}
             title={`Switch to ${tab.label}`}
             style={{ backgroundColor: tab.hex }}
-            className={`${tab.heightClass} relative flex flex-col items-center justify-between py-2.5 border-y border-r border-[#1C1B18] rounded-r-[6px] step-hinge ${
+            className={`fore-edge-tab ${tab.heightClass} relative flex flex-col items-center justify-between py-2.5 border-y border-r border-[#1C1B18] dark:border-[#312E29] rounded-r-[6px] step-hinge ${
               tab.isActive ? 'w-9 -ml-px z-10 font-bold' : 'w-7 opacity-90 hover:w-8 hover:opacity-100'
             } ${tab.lightText ? 'text-[#FAF7F0]' : 'text-[#1C1B18]'}`}
           >
@@ -774,6 +1088,9 @@ export default function App() {
           </button>
         ))}
       </aside>
+
+      {/* Global Floating Formula Quick Reference Widget (Ctrl+K / Cmd+K) */}
+      <FormulaQuickRef divisionColors={DIVISION_WHEEL} />
     </div>
   );
 }

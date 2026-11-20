@@ -20,8 +20,14 @@ import {
 import { ExamReadinessReport, SmartNextAction } from '../utils/readinessEngine';
 import { ExamCountdown } from './ExamCountdown';
 import { LabId } from './InteractiveLabsView';
+import { PomodoroTimer } from './PomodoroTimer';
+import type { DivisionColorMeta } from './WeakTopicsPanel';
+
+type ModuleId = 'm1' | 'm2' | 'm3' | 'm4' | 'm5';
 
 interface SprintPlannerViewProps {
+  activeModuleId?: ModuleId;
+  divisionColors?: Record<ModuleId, DivisionColorMeta>;
   completedBlockIds: string[];
   masteredTopicIds: string[];
   readiness: ExamReadinessReport;
@@ -194,6 +200,8 @@ const MODULE_SWATCHES: Record<'m1' | 'm2' | 'm3' | 'm4' | 'm5', { bg: string; te
 };
 
 export const SprintPlannerView: React.FC<SprintPlannerViewProps> = ({
+  activeModuleId = 'm1',
+  divisionColors,
   completedBlockIds,
   masteredTopicIds,
   readiness,
@@ -210,6 +218,10 @@ export const SprintPlannerView: React.FC<SprintPlannerViewProps> = ({
   onOpenFlashcards,
   onOpenPlaybook,
 }) => {
+  const activeRingHex =
+    divisionColors?.[activeModuleId]?.hex ?? MODULE_SWATCHES[activeModuleId].bg;
+  const activeModuleCode =
+    divisionColors?.[activeModuleId]?.code ?? `M${activeModuleId.slice(1)}`;
   const [dayFilter, setDayFilter] = useState<DayFilter>('All');
   const [hideCompleted, setHideCompleted] = useState(false);
   const [highYieldOnly, setHighYieldOnly] = useState(false);
@@ -496,6 +508,12 @@ export const SprintPlannerView: React.FC<SprintPlannerViewProps> = ({
           </div>
         </div>
       </section>
+
+      {/* Compact Pomodoro Focus Timer — directly below progress stats, non-blocking */}
+      <PomodoroTimer
+        ringColorHex={activeRingHex}
+        activeModuleCode={activeModuleCode}
+      />
 
       {/* 5-Division Module Index Strip (Color-Coded Manual Tabs) */}
       <section aria-label="Module hour distribution" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">

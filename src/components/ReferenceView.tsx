@@ -11,9 +11,14 @@ import {
   SrsProgressMap,
   SrsRating,
 } from '../utils/srsEngine';
+import {
+  openPrintableCheatSheet,
+  PrintDivisionColor,
+} from '../utils/cheatSheetPrintEngine';
 
 interface ReferenceViewProps {
   activeModuleId: 'm1' | 'm2' | 'm3' | 'm4' | 'm5';
+  divisionColors?: Record<'m1' | 'm2' | 'm3' | 'm4' | 'm5', PrintDivisionColor>;
   onSelectModule: (id: 'm1' | 'm2' | 'm3' | 'm4' | 'm5') => void;
   onNavigateToSyllabus: (id: 'm1' | 'm2' | 'm3' | 'm4' | 'm5') => void;
   openFlashcardsSignal: number;
@@ -43,6 +48,7 @@ type ReferenceMode = 'appendix' | 'cheatsheet' | 'flashcards' | 'playbook';
 
 export const ReferenceView: React.FC<ReferenceViewProps> = ({
   activeModuleId,
+  divisionColors,
   onSelectModule,
   onNavigateToSyllabus,
   openFlashcardsSignal,
@@ -83,11 +89,8 @@ export const ReferenceView: React.FC<ReferenceViewProps> = ({
   const folder = PROFESSOR_PPT_FOLDERS[activeModule.id];
   const activePalette = MODULE_DIVISION_PALETTE[activeModule.id];
 
-  const handlePrintSheet = () => {
-    setViewMode('cheatsheet');
-    window.setTimeout(() => {
-      window.print();
-    }, 80);
+  const handlePrintCheatSheet = () => {
+    openPrintableCheatSheet(MODULES, divisionColors);
   };
 
   return (
@@ -153,14 +156,16 @@ export const ReferenceView: React.FC<ReferenceViewProps> = ({
           >
             {viewMode === 'cheatsheet' ? 'Back to Module Appendix' : 'All-5-Module Cheat Sheet'}
           </button>
-          <button
-            type="button"
-            onClick={handlePrintSheet}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#1C1B18] bg-[#FAF7F0] hover:bg-[#EAE4D7] border border-[#1C1B18] rounded-[4px] step-hinge whitespace-nowrap"
-          >
-            <Printer className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Print Formula Sheet</span>
-          </button>
+          {viewMode === 'cheatsheet' && (
+            <button
+              type="button"
+              onClick={handlePrintCheatSheet}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#1C1B18] bg-[#E5B82E] hover:bg-[#d8ab22] border border-[#1C1B18] rounded-[4px] step-hinge whitespace-nowrap"
+            >
+              <Printer className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Print Cheat Sheet</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onNavigateToSyllabus(activeModule.id)}
@@ -255,40 +260,52 @@ export const ReferenceView: React.FC<ReferenceViewProps> = ({
         </div>
       ) : (
         <>
-          {/* Module Selector Tabs */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 no-print">
-        {MODULES.map((mod) => {
-          const active = mod.id === activeModule.id;
-          const palette = MODULE_DIVISION_PALETTE[mod.id];
-          return (
+          {/* Module Selector Tabs + Print Cheat Sheet Action */}
+          <div className="flex flex-col lg:flex-row lg:items-stretch gap-2 no-print">
+            <div className="flex-1 grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {MODULES.map((mod) => {
+                const active = mod.id === activeModule.id;
+                const palette = MODULE_DIVISION_PALETTE[mod.id];
+                return (
+                  <button
+                    key={mod.id}
+                    type="button"
+                    onClick={() => onSelectModule(mod.id)}
+                    style={
+                      active
+                        ? { backgroundColor: palette.hex, color: palette.ink }
+                        : undefined
+                    }
+                    className={`px-3.5 py-2.5 text-xs font-bold rounded-[4px] border border-[#1C1B18] step-hinge flex items-center justify-between gap-2 tabular-nums ${
+                      active
+                        ? ''
+                        : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#F4EFE4]'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2 truncate">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full border border-[#1C1B18] shrink-0"
+                        style={{ backgroundColor: palette.hex }}
+                        aria-hidden="true"
+                      />
+                      <span className="truncate">Module {mod.number}</span>
+                    </span>
+                    <span className="font-mono text-[11px] opacity-85 shrink-0">{mod.hours}h</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <button
-              key={mod.id}
               type="button"
-              onClick={() => onSelectModule(mod.id)}
-              style={
-                active
-                  ? { backgroundColor: palette.hex, color: palette.ink }
-                  : undefined
-              }
-              className={`px-3.5 py-2.5 text-xs font-bold rounded-[4px] border border-[#1C1B18] step-hinge flex items-center justify-between gap-2 tabular-nums ${
-                active
-                  ? ''
-                  : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#F4EFE4]'
-              }`}
+              data-testid="print-cheat-sheet-btn"
+              onClick={handlePrintCheatSheet}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-[0.04em] text-[#FAF7F0] bg-[#1C1B18] hover:bg-[#2C2A25] border border-[#1C1B18] rounded-[4px] step-hinge whitespace-nowrap shrink-0"
             >
-              <span className="flex items-center gap-2 truncate">
-                <span
-                  className="w-2.5 h-2.5 rounded-full border border-[#1C1B18] shrink-0"
-                  style={{ backgroundColor: palette.hex }}
-                  aria-hidden="true"
-                />
-                <span className="truncate">Module {mod.number}</span>
-              </span>
-              <span className="font-mono text-[11px] opacity-85 shrink-0">{mod.hours}h</span>
+              <Printer className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Print Cheat Sheet</span>
             </button>
-          );
-        })}
-      </div>
+          </div>
 
       {/* Active Module Context Banner (h2 FIRST — zero eyebrow above h2) */}
       <div className="bg-[#FAF7F0] border border-[#1C1B18] rounded-[4px] overflow-hidden">

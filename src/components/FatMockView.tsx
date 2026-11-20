@@ -25,6 +25,14 @@ import {
 } from '../data/slotPaperAnalysis';
 import { ConceptDiagram } from './ConceptDiagrams';
 import { MarkdownBlock } from './MarkdownBlock';
+import { ModuleId, WeakTopicEntry } from '../utils/standingEngine';
+import { DivisionColorMeta, WeakTopicsPanel } from './WeakTopicsPanel';
+
+export interface MockPresetRequest {
+  subView: 'mcq' | 'weak_topics';
+  moduleId: 'all' | 'm1' | 'm2' | 'm3' | 'm4' | 'm5';
+  nonce: number;
+}
 
 interface FatMockViewProps {
   savedAnswers: Record<string, number>;
@@ -33,12 +41,19 @@ interface FatMockViewProps {
   rubricScores?: Record<string, number>;
   onSetRubricScore?: (scoreKey: string, value: number | null) => void;
   onResetRubricScores?: (paperPrefix: string) => void;
+  weakTopics?: WeakTopicEntry[];
+  divisionColors?: Record<ModuleId, DivisionColorMeta>;
+  onReviewWeakTopic?: (questionId: string) => void;
+  onToggleWeakTopicResolved?: (questionId: string) => void;
+  onClearResolvedWeakTopics?: () => void;
+  presetRequest?: MockPresetRequest | null;
   onNavigateToTopic?: (moduleId: 'm1' | 'm2' | 'm3' | 'm4' | 'm5', topicId: string) => void;
 }
 
-type MockSubView = 'slot_paper' | 'forensics' | 'mcq';
+type MockSubView = 'slot_paper' | 'forensics' | 'mcq' | 'weak_topics';
 type PaperSetId = 'a1' | 'a2' | 'model' | 'predicted';
 type ModuleFilter = 'all' | 'm1' | 'm2' | 'm3' | 'm4' | 'm5';
+type PartFilter = 'all' | 'Part A (Short)' | 'Part B (Analytical)';
 type SlotFilter = 'ALL' | SlotId;
 
 const THREE_HOURS_SECONDS = 3 * 60 * 60;
@@ -63,6 +78,12 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
   rubricScores = {},
   onSetRubricScore,
   onResetRubricScores,
+  weakTopics = [],
+  divisionColors,
+  onReviewWeakTopic = () => {},
+  onToggleWeakTopicResolved = () => {},
+  onClearResolvedWeakTopics = () => {},
+  presetRequest = null,
   onNavigateToTopic,
 }) => {
   const [subView, setSubView] = useState<MockSubView>('slot_paper');
@@ -84,10 +105,27 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
 
   // --- Rapid MCQ State ---
   const [moduleFilter, setModuleFilter] = useState<ModuleFilter>('all');
+  const [partFilter, setPartFilter] = useState<PartFilter>('all');
   const [missedOnly, setMissedOnly] = useState(false);
   const [timedMode, setTimedMode] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(30 * 60);
   const [currentIdx, setCurrentIdx] = useState(0);
+
+  useEffect(() => {
+    if (!presetRequest) return;
+    setSubView(presetRequest.subView);
+    if (presetRequest.subView === 'mcq') {
+      setModuleFilter(presetRequest.moduleId);
+      setPartFilter('all');
+      setMissedOnly(false);
+      setCurrentIdx(0);
+    }
+  }, [presetRequest]);
+
+  const unresolvedWeakCount = useMemo(
+    () => weakTopics.filter((w) => !w.resolved).length,
+    [weakTopics]
+  );
 
   useEffect(() => {
     if (!examRunning) return;
@@ -108,13 +146,14 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
   const filteredQuestions = useMemo(() => {
     return FAT_QUESTIONS.filter((q) => {
       if (moduleFilter !== 'all' && q.moduleId !== moduleFilter) return false;
+      if (partFilter !== 'all' && q.part !== partFilter) return false;
       if (missedOnly) {
         const chosen = savedAnswers[q.id];
         return chosen !== undefined && chosen !== q.correctIndex;
       }
       return true;
     });
-  }, [moduleFilter, missedOnly, savedAnswers]);
+  }, [moduleFilter, partFilter, missedOnly, savedAnswers]);
 
   const safeIdx = Math.min(currentIdx, Math.max(0, filteredQuestions.length - 1));
   const currentQ = filteredQuestions[safeIdx];
@@ -366,7 +405,18 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                 : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
             }`}
           >
-            20-Q Rapid MCQ Drill
+            {FAT_QUESTIONS.length}-Q Rapid MCQ Drill
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubView('weak_topics')}
+            className={`px-3 py-2 text-xs font-bold rounded-[4px] border border-[#1C1B18] step-hinge whitespace-nowrap shrink-0 tabular-nums ${
+              subView === 'weak_topics'
+                ? 'bg-[#6B21A8] text-[#FAF7F0]'
+                : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
+            }`}
+          >
+            Weak Topics ({unresolvedWeakCount})
           </button>
         </div>
       </div>
@@ -905,8 +955,8 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
         </div>
       )}
 
-      {/* ====================================================================
-          MODE 3: 20-Q RAPID MCQ DRILL
+          {/* ====================================================================
+          MODE 3: RAPID MCQ DRILL (FULL SYLLABUS BANK)
          ==================================================================== */}
       {subView === 'mcq' && (
         <div className="space-y-5" data-testid="mcq-drill-view">
@@ -947,24 +997,52 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-1.5">
-              {(['all', 'm1', 'm2', 'm3', 'm4', 'm5'] as ModuleFilter[]).map((mod) => (
-                <button
-                  key={mod}
-                  type="button"
-                  onClick={() => {
-                    setModuleFilter(mod);
-                    setCurrentIdx(0);
-                  }}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-[4px] border border-[#1C1B18] step-hinge whitespace-nowrap shrink-0 ${
-                    moduleFilter === mod
-                      ? 'bg-[#1C1B18] text-[#FAF7F0]'
-                      : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
-                  }`}
-                >
-                  {mod === 'all' ? 'All Modules' : `Mod ${mod.slice(1)}`}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(['all', 'm1', 'm2', 'm3', 'm4', 'm5'] as ModuleFilter[]).map((mod) => (
+                  <button
+                    key={mod}
+                    type="button"
+                    onClick={() => {
+                      setModuleFilter(mod);
+                      setCurrentIdx(0);
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-[4px] border border-[#1C1B18] step-hinge whitespace-nowrap shrink-0 ${
+                      moduleFilter === mod
+                        ? 'bg-[#1C1B18] text-[#FAF7F0]'
+                        : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
+                    }`}
+                  >
+                    {mod === 'all' ? 'All Modules' : `Mod ${mod.slice(1)}`}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 pl-0 sm:pl-2 sm:border-l sm:border-[#C5BEB0]">
+                {(
+                  [
+                    { id: 'all', label: 'All Parts' },
+                    { id: 'Part A (Short)', label: 'Part A (2M)' },
+                    { id: 'Part B (Analytical)', label: 'Part B (10M)' },
+                  ] as Array<{ id: PartFilter; label: string }>
+                ).map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setPartFilter(p.id);
+                      setCurrentIdx(0);
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-[4px] border border-[#1C1B18] step-hinge whitespace-nowrap shrink-0 ${
+                      partFilter === p.id
+                        ? 'bg-[#E5B82E] text-[#1C1B18]'
+                        : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <label className="inline-flex items-center gap-2 text-xs font-bold text-[#1C1B18] cursor-pointer select-none">
@@ -986,7 +1064,9 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
               <p className="text-sm font-bold text-[#1C1B18]">
                 {missedOnly ? 'No missed questions in this filter.' : 'No questions found.'}
               </p>
-              <p className="text-xs text-[#6E695D]">Uncheck &quot;Review missed questions only&quot; to practice all 20 FAT items.</p>
+              <p className="text-xs text-[#6E695D]">
+                Uncheck &quot;Review missed questions only&quot; to practice all {FAT_QUESTIONS.length} FAT items.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -1004,7 +1084,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                 </div>
 
                 {currentQ.codeOrSchema && (
-                  <div className="font-mono text-xs sm:text-sm bg-[#26231E] border border-[#1C1B18] rounded-[4px] px-4 py-3 text-[#FAF7F0] overflow-x-auto">
+                  <div className="font-mono text-xs sm:text-sm bg-[#26231E] border border-[#1C1B18] rounded-[4px] px-4 py-3 text-[#FAF7F0] overflow-x-auto whitespace-pre-wrap leading-relaxed">
                     {currentQ.codeOrSchema}
                   </div>
                 )}
@@ -1061,7 +1141,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                         ? 'Correct — Worked Solution'
                         : 'Incorrect — Worked Solution'}
                     </div>
-                    <p className="prose-manual">{currentQ.explanation}</p>
+                    <p className="prose-manual whitespace-pre-line">{currentQ.explanation}</p>
                   </div>
                 )}
 
@@ -1086,10 +1166,15 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
               </div>
 
               <div className="lg:col-span-4 bg-[#FAF7F0] border border-[#1C1B18] rounded-[4px] p-5 space-y-4">
-                <h3 className="text-sm font-extrabold text-[#1C1B18] border-b border-[#1C1B18] pb-2">
-                  Question Map
-                </h3>
-                <div className="grid grid-cols-5 gap-2">
+                <div className="flex items-center justify-between border-b border-[#1C1B18] pb-2">
+                  <h3 className="text-sm font-extrabold text-[#1C1B18]">
+                    Question Map
+                  </h3>
+                  <span className="text-xs font-mono font-bold text-[#6E695D] tabular-nums">
+                    {filteredQuestions.length} Qs
+                  </span>
+                </div>
+                <div className="grid grid-cols-5 gap-2 max-h-[400px] overflow-y-auto pr-1" data-testid="question-map-grid">
                   {filteredQuestions.map((q, idx) => {
                     const chosen = savedAnswers[q.id];
                     const isCurrent = idx === safeIdx;
@@ -1134,7 +1219,37 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
               </div>
             </div>
           )}
+          {weakTopics.length > 0 && (
+            <WeakTopicsPanel
+              panelId="mcq-weak-topics-panel"
+              weakTopics={weakTopics}
+              divisionColors={divisionColors}
+              onReviewWeakTopic={onReviewWeakTopic}
+              onToggleResolved={onToggleWeakTopicResolved}
+              onClearAllResolved={onClearResolvedWeakTopics}
+              defaultExpanded={false}
+              title="Weak Topics Quick Panel"
+              subtitle="Expand to review missed questions from Standing and FAT Mock without leaving your MCQ drill."
+            />
+          )}
         </div>
+      )}
+
+      {/* ====================================================================
+          MODE 4: WEAK TOPICS PANEL (STANDING + FAT MOCK WRONGS)
+         ==================================================================== */}
+      {subView === 'weak_topics' && (
+        <WeakTopicsPanel
+          panelId="mock-weak-topics-panel"
+          weakTopics={weakTopics}
+          divisionColors={divisionColors}
+          onReviewWeakTopic={onReviewWeakTopic}
+          onToggleResolved={onToggleWeakTopicResolved}
+          onClearAllResolved={onClearResolvedWeakTopics}
+          defaultExpanded={true}
+          title="Central Weak Topics Tracker"
+          subtitle="Tracks every wrong answer from Standing Diagnostics and FAT Mock MCQs with SRS overdue alerts, inline worked review, and resolution tracking."
+        />
       )}
     </div>
   );

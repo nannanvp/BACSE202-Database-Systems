@@ -15,8 +15,29 @@
       href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,500;0,600;0,700;0,800;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+    <script>
+      (function () {
+        try {
+          var raw = window.localStorage.getItem('bacse202_dark_mode_v1');
+          var isDark = false;
+          if (raw !== null) {
+            var clean = raw.trim().toLowerCase();
+            if (clean === 'true' || clean === '1' || clean === 'dark' || clean === '"dark"') {
+              isDark = true;
+            } else if (clean === 'false' || clean === '0' || clean === 'light' || clean === '"light"') {
+              isDark = false;
+            } else {
+              isDark = Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            }
+          } else {
+            isDark = Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          }
+          document.documentElement.classList.toggle('dark', isDark);
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-[#26231E] text-[#1C1B18] antialiased">
+  <body class="bg-[#26231E] dark:bg-[#100F0D] text-[#1C1B18] dark:text-[#E6E2DA] antialiased transition-colors duration-200">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

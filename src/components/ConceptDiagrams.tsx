@@ -86,5 +86,9 @@ export const ConceptDiagram: React.FC<{
   caption?: string;
 }> = ({ id, caption }) => {
   const Component = DIAGRAM_REGISTRY[id];
-  return <Component caption={caption} />;
+  return (
+    <div className="diagram-canvas-plate rounded-[4px] overflow-hidden">
+      <Component caption={caption} />
+    </div>
+  );
 };

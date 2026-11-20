@@ -264,9 +264,9 @@ test('Module 5 enhanced notes include deep study sections, A1/A2 + Official Mode
     });
   }
 
-  // Verify Module 5 FAT MCQs (q17-q20)
+  // Verify Module 5 FAT MCQs (existing q17-q20 + extended m5_q5..m5_q19)
   const m5FatMcqs = FAT_QUESTIONS.filter((q) => q.moduleId === 'm5');
-  assert.equal(m5FatMcqs.length, 4);
+  assert.ok(m5FatMcqs.length >= 19, `Expected >=19 M5 FAT MCQs, got ${m5FatMcqs.length}`);
   for (const q of m5FatMcqs) {
     assert.ok(q.options.length === 4);
     assert.ok(q.correctIndex >= 0 && q.correctIndex < q.options.length);

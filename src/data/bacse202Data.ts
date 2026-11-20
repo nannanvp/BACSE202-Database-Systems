@@ -1,3 +1,5 @@
+import { EXTENDED_FAT_QUESTIONS } from './fatQuestionsExtended';
+
 export interface SyllabusTopic {
   id: string;
   title: string;
@@ -155,6 +157,7 @@ export const MODULES: ModuleData[] = [
       'Given an Employee–Department schema, trace which Insert/Delete/Update operations violate Domain, Entity, or Referential Integrity and specify CASCADE vs RESTRICT remedies.',
       'Compare relational, graph, vector, and time-series data models with real-world selection criteria.',
     ],
+    recommendedLab: 'integrity',
   },
   {
     id: 'm2',
@@ -572,9 +575,9 @@ export const SPRINT_BLOCKS: SprintBlock[] = [
     title: 'Full Timed FAT Mock Exam & Missed-Topic Repair',
     moduleId: 'all',
     syllabusHours: 0,
-    focusSummary: 'Complete the 20-question BACSE202 Mock FAT covering Part A (2M) & Part B (10M) patterns and patch weak spots.',
+    focusSummary: 'Complete the 110-question BACSE202 Mock FAT bank covering Part A (2M) & Part B (10M) analytical patterns and patch weak spots.',
     checklist: [
-      'Complete all 20 FAT Mock questions under timed exam conditions',
+      'Drill Part A (2M) & Part B (10M) FAT Mock questions under timed exam conditions',
       'Review every missed question explanation and redo its corresponding lab',
       'Sleep by 23:15 so morning recall on Nov 23 is sharp',
     ],
@@ -902,4 +905,5 @@ export const FAT_QUESTIONS: FatQuestion[] = [
     correctIndex: 1,
     explanation: '2PC is unanimous: the coordinator writes [prepare] and collects votes; only if EVERY participant force-writes [ready] and votes YES does the coordinator issue Global Commit.',
   },
+  ...EXTENDED_FAT_QUESTIONS,
 ];
