@@ -8,6 +8,8 @@ import {
   buildTopicPredictionMatrix,
   computePredictionStats,
   filterPredictionMatrix,
+  GAMMA_D2_BLUEPRINT,
+  GAMMA_SYNTHESIS_ROWS,
 } from './predictionEngine';
 
 test('buildTopicPredictionMatrix returns all 30 syllabus topics in exact Module 1 -> Module 5 order', () => {
@@ -55,6 +57,11 @@ test('computePredictionStats and filterPredictionMatrix partition all 30 topics 
   assert.equal(stats.partialInD1, 6);
   assert.equal(stats.testedInD1, 8);
   assert.ok(stats.untestedWithVelloreProof >= 9, `Expected >=9 D1-untested topics with A1/A2 proof, got ${stats.untestedWithVelloreProof}`);
+  assert.equal(stats.alphaTotalMarks, 100);
+  assert.equal(stats.betaTotalMarks, 100);
+  assert.equal(stats.gammaTotalMarks, 100);
+  assert.equal(stats.gammaUnanimousCount, 5);
+  assert.ok(stats.gammaTopicCoverageCount >= 15, `Expected >=15 topics in Gamma D2, got ${stats.gammaTopicCoverageCount}`);
 
   assert.equal(filterPredictionMatrix(matrix, 'all', 'all').length, 30);
   assert.equal(filterPredictionMatrix(matrix, 'untested', 'all').length, stats.untestedInD1);
@@ -68,12 +75,14 @@ test('computePredictionStats and filterPredictionMatrix partition all 30 topics 
   assert.equal(filterPredictionMatrix(matrix, 'all', 'm5').length, 6);
 });
 
-test('Alpha D2 and Beta D2 blueprints strictly match VIT Chennai 100M format (7x10M + 2x15M = 100M) with valid syllabus topic IDs', () => {
+test('Alpha D2, Beta D2, and Gamma D2 blueprints strictly match VIT Chennai 100M format (7x10M + 2x15M = 100M) with valid syllabus topic IDs', () => {
   const validTopicIds = new Set(MODULES.flatMap((m) => m.topics.map((t) => t.id)));
+  const matrixById = new Map(buildTopicPredictionMatrix().map((e) => [e.topicId, e]));
 
   for (const [label, blueprint] of [
     ['ALPHA_D2_BLUEPRINT', ALPHA_D2_BLUEPRINT],
     ['BETA_D2_BLUEPRINT', BETA_D2_BLUEPRINT],
+    ['GAMMA_D2_BLUEPRINT', GAMMA_D2_BLUEPRINT],
   ] as const) {
     assert.equal(blueprint.length, 9, `${label} must have 9 questions (Q1..Q9)`);
     assert.equal(
@@ -98,6 +107,27 @@ test('Alpha D2 and Beta D2 blueprints strictly match VIT Chennai 100M format (7x
         );
         assert.ok(q.a1a2Precedent && q.a1a2Precedent.length > 10, `Beta ${q.qNo} must cite A1->A2 precedent`);
       }
+      if (label === 'GAMMA_D2_BLUEPRINT') {
+        assert.ok(
+          q.gammaConsensusType === 'Unanimous Lock' ||
+            q.gammaConsensusType === 'Consensus + Split' ||
+            q.gammaConsensusType === 'Arbitrated Anchor',
+          `Gamma ${q.qNo} must declare gammaConsensusType`
+        );
+        assert.ok(
+          typeof q.confidencePct === 'number' && q.confidencePct >= 80 && q.confidencePct <= 99,
+          `Gamma ${q.qNo} confidencePct must be in 80..99`
+        );
+        assert.ok(
+          q.alphaVsBetaSummary && q.alphaVsBetaSummary.length > 15,
+          `Gamma ${q.qNo} must include alphaVsBetaSummary`
+        );
+        for (const tid of q.targetTopicIds) {
+          const entry = matrixById.get(tid);
+          assert.ok(entry?.inGammaD2, `Matrix topic ${tid} should be tagged inGammaD2`);
+          assert.ok(entry?.gammaD2SlotRef?.startsWith('Gamma Q'), `Matrix topic ${tid} should have gammaD2SlotRef`);
+        }
+      }
     });
   }
 
@@ -105,4 +135,15 @@ test('Alpha D2 and Beta D2 blueprints strictly match VIT Chennai 100M format (7x
   assert.ok(A1_TO_A2_SHIFT_PATTERNS.length >= 6);
   const coveredModules = new Set(A1_TO_A2_SHIFT_PATTERNS.map((p) => p.moduleId));
   assert.deepEqual([...coveredModules].sort(), ['m1', 'm2', 'm3', 'm4', 'm5']);
+
+  // Gamma arbitration synthesis table matches Q1..Q9 and mirrors blueprint marks & consensus types
+  assert.equal(GAMMA_SYNTHESIS_ROWS.length, 9);
+  GAMMA_SYNTHESIS_ROWS.forEach((row, idx) => {
+    const q = GAMMA_D2_BLUEPRINT[idx];
+    assert.equal(row.qNo, q.qNo);
+    assert.equal(row.marks, q.marks);
+    assert.equal(row.moduleId, q.moduleId);
+    assert.equal(row.consensusType, q.gammaConsensusType);
+    assert.equal(row.confidencePct, q.confidencePct);
+  });
 });

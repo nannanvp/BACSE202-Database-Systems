@@ -11,6 +11,7 @@ export type D1CoverageStatus = 'untested' | 'partial' | 'tested';
 export type VelloreSlotTag = 'A1+TA1' | 'A2+TA2';
 export type PredictionCoverageFilter = 'all' | 'untested' | 'untested_with_vellore' | 'partial' | 'tested';
 export type BetaPatternType = 'Sibling Rotation' | 'Anchor Repeat';
+export type GammaConsensusType = 'Unanimous Lock' | 'Consensus + Split' | 'Arbitrated Anchor';
 
 export interface VelloreQuestionLink {
   id: string;
@@ -45,6 +46,9 @@ export interface TopicPredictionEntry {
   inBetaD2: boolean;
   betaD2SlotRef?: string;
   betaMechanism?: BetaPatternType;
+  inGammaD2: boolean;
+  gammaD2SlotRef?: string;
+  gammaConsensusType?: GammaConsensusType;
 }
 
 export interface A1ToA2ShiftPattern {
@@ -59,9 +63,21 @@ export interface A1ToA2ShiftPattern {
   betaD2Projection: string;
 }
 
+export interface GammaSynthesisRow {
+  id: string;
+  qNo: string;
+  marks: 10 | 15;
+  moduleId: ModuleId;
+  alphaPick: string;
+  betaPick: string;
+  consensusType: GammaConsensusType;
+  confidencePct: number;
+  gammaDecision: string;
+}
+
 export interface PredictedD2Question {
   id: string;
-  model: 'alpha' | 'beta';
+  model: 'alpha' | 'beta' | 'gamma';
   qNo: string;
   section: 'Section I (7 × 10M)' | 'Section II (2 × 15M)';
   marks: 10 | 15;
@@ -73,6 +89,9 @@ export interface PredictedD2Question {
   d1Counterpart: string;
   betaMechanism?: BetaPatternType;
   a1a2Precedent?: string;
+  gammaConsensusType?: GammaConsensusType;
+  confidencePct?: number;
+  alphaVsBetaSummary?: string;
   subQuestions: Array<{ part: string; marks: number; text: string }>;
   rationale: string;
   vellorePrecedentTags: string[];
@@ -87,8 +106,11 @@ export interface PredictionSummaryStats {
   partialWithVelloreProof: number;
   alphaTotalMarks: number;
   betaTotalMarks: number;
+  gammaTotalMarks: number;
   betaRotationCount: number;
   betaRepeatCount: number;
+  gammaUnanimousCount: number;
+  gammaTopicCoverageCount: number;
 }
 
 interface RawTopicCoverageMeta {
@@ -645,6 +667,21 @@ const RAW_TOPIC_COVERAGE: Record<string, RawTopicCoverageMeta> = {
 };
 
 export function buildTopicPredictionMatrix(): TopicPredictionEntry[] {
+  const gammaByTopic = new Map<
+    string,
+    { slotRef: string; consensusType?: GammaConsensusType }
+  >();
+  for (const q of GAMMA_D2_BLUEPRINT) {
+    for (const tid of q.targetTopicIds) {
+      if (!gammaByTopic.has(tid)) {
+        gammaByTopic.set(tid, {
+          slotRef: `Gamma ${q.qNo} [${q.marks}M]`,
+          consensusType: q.gammaConsensusType,
+        });
+      }
+    }
+  }
+
   const matrix: TopicPredictionEntry[] = [];
   let globalOrder = 0;
 
@@ -658,6 +695,7 @@ export function buildTopicPredictionMatrix(): TopicPredictionEntry[] {
       const velloreLinks = raw.velloreSpecs.map((spec) =>
         resolveVelloreOption(spec.slot, spec.qNoPrefix, spec.branch, spec.displayRef)
       );
+      const gammaMatch = gammaByTopic.get(topic.id);
 
       matrix.push({
         moduleId: mod.id,
@@ -680,6 +718,9 @@ export function buildTopicPredictionMatrix(): TopicPredictionEntry[] {
         inBetaD2: raw.inBetaD2,
         betaD2SlotRef: raw.betaD2SlotRef,
         betaMechanism: raw.betaMechanism,
+        inGammaD2: Boolean(gammaMatch),
+        gammaD2SlotRef: gammaMatch?.slotRef,
+        gammaConsensusType: gammaMatch?.consensusType,
       });
     });
   }
@@ -1278,6 +1319,390 @@ export const BETA_D2_BLUEPRINT: PredictedD2Question[] = [
   },
 ];
 
+// ============================================================================
+// GAMMA D2 — ENSEMBLE CONSENSUS SYNTHESIS (ALPHA D2 ∩ BETA D2 + ARBITRATION)
+// ============================================================================
+
+export const GAMMA_SYNTHESIS_ROWS: GammaSynthesisRow[] = [
+  {
+    id: 'gamma-row-q1',
+    qNo: 'Q1',
+    marks: 10,
+    moduleId: 'm1',
+    alphaPick: 'Three-Schema Architecture (6M) + Client-Server / Data Models (4M)',
+    betaPick: 'Three-Schema Architecture (6M) + Client-Server / Data Models (4M)',
+    consensusType: 'Unanimous Lock',
+    confidencePct: 95,
+    gammaDecision: 'Locked verbatim — both strict D1-negative and A1 Q1➔A2 Q1 rotation converge on m1-t3 + m1-t4.',
+  },
+  {
+    id: 'gamma-row-q2',
+    qNo: 'Q2',
+    marks: 10,
+    moduleId: 'm1',
+    alphaPick: 'Integrity Constraints Audit (5M) + CASCADE/RESTRICT/SET NULL (5M)',
+    betaPick: 'Integrity Constraints Audit (6M) + CASCADE/RESTRICT/SET NULL (4M)',
+    consensusType: 'Unanimous Lock',
+    confidencePct: 95,
+    gammaDecision: 'Locked verbatim — 0M in Chennai D1 yet 10M in BOTH Vellore A1 Q2 and A2 Q2.',
+  },
+  {
+    id: 'gamma-row-q3',
+    qNo: 'Q3',
+    marks: 10,
+    moduleId: 'm3',
+    alphaPick: 'Extendible/Linear Hashing (6M) + Heap vs. Ordered File Org (4M)',
+    betaPick: 'Extendible/Linear Hashing (5M) + Multilevel Index Disk I/O Math (5M)',
+    consensusType: 'Consensus + Split',
+    confidencePct: 88,
+    gammaDecision: 'Keep Hashing consensus lock (6M) + select Multilevel Index Disk I/O Numerical (4M), which also tests bfr = floor(B/R) from File Org.',
+  },
+  {
+    id: 'gamma-row-q4',
+    qNo: 'Q4',
+    marks: 10,
+    moduleId: 'm3',
+    alphaPick: 'Heuristic Query Tree Opt (6M) + Tuple Relational Calculus TRC (4M)',
+    betaPick: 'Analytical SQL/RA Anchor (5M) + Heuristic Query Tree Opt (5M)',
+    consensusType: 'Consensus + Split',
+    confidencePct: 90,
+    gammaDecision: 'Keep Query Tree Optimization consensus lock (6M — asked in BOTH A1 Q6 & A2 Q10b) + pair with TRC (∃/∀) & SQL/RA equivalence (4M).',
+  },
+  {
+    id: 'gamma-row-q5',
+    qNo: 'Q5',
+    marks: 10,
+    moduleId: 'm4',
+    alphaPick: 'ACID & Transaction States (5M) + WFG / Wait-Die / Wound-Wait (5M)',
+    betaPick: 'ACID & Transaction States (5M) + Precedence Graph Anchor Repeat (5M)',
+    consensusType: 'Consensus + Split',
+    confidencePct: 90,
+    gammaDecision: 'Keep ACID + State Diagram lock (5M) + retain Precedence Graph (5M, 3-for-3 streak across D1/A1/A2), moving WFG/Wait-Die cleanly to Q6(b).',
+  },
+  {
+    id: 'gamma-row-q6',
+    qNo: 'Q6',
+    marks: 10,
+    moduleId: 'm4',
+    alphaPick: 'Deferred vs. Immediate WAL Recovery (6M) + Multi-Granularity Locking (4M)',
+    betaPick: 'Deferred vs. Immediate WAL Recovery (5M) + WFG / Wait-Die / Wound-Wait (5M)',
+    consensusType: 'Unanimous Lock',
+    confidencePct: 94,
+    gammaDecision: 'Unites two cross-model locks: WAL Recovery (Alpha Q6a + Beta Q6a, 5M) + WFG & Wait-Die/Wound-Wait Deadlocks (Alpha Q5b + Beta Q6b, 5M).',
+  },
+  {
+    id: 'gamma-row-q7',
+    qNo: 'Q7',
+    marks: 10,
+    moduleId: 'm2',
+    alphaPick: 'CAP Theorem + ACID vs. BASE (10M · M5 — drops Normalization)',
+    betaPick: '1NF→BCNF Normalization + 3NF vs. BCNF Proof (10M · M2)',
+    consensusType: 'Arbitrated Anchor',
+    confidencePct: 86,
+    gammaDecision: 'Keep Normalization in Q7 (10M · CO2, 3-for-3 universal FAT anchor) AND promote CAP Theorem into Q9(i) so zero high-yield topic is dropped.',
+  },
+  {
+    id: 'gamma-row-q8',
+    qNo: 'Q8',
+    marks: 15,
+    moduleId: 'm2',
+    alphaPick: 'EER Diagram + 8A–8D Mapping (8M) + Minimal Cover & Chase Test (7M)',
+    betaPick: 'EER Diagram + Lattice (8M) + Minimal Cover & Lossless Check (7M)',
+    consensusType: 'Unanimous Lock',
+    confidencePct: 95,
+    gammaDecision: 'Locked verbatim — exact 15M Section II mirror of Chennai D1 Q8, flipping Mapping+Closure into EER Design + Minimal Cover & Chase.',
+  },
+  {
+    id: 'gamma-row-q9',
+    qNo: 'Q9',
+    marks: 15,
+    moduleId: 'm5',
+    alphaPick: '4 NoSQL Types + JSON Schema (8M) + 2PC & Semijoin Cost (7M)',
+    betaPick: 'CAP Theorem + 4 NoSQL Types (8M) + 2PC & Semijoin Cost (7M)',
+    consensusType: 'Unanimous Lock',
+    confidencePct: 95,
+    gammaDecision: 'Pure CO4/M5 15M capstone uniting all 3 untouched M5 pillars: CAP Theorem (5M) + 4 NoSQL Types / JSON Schema (5M) + 2PC & Semijoin (5M).',
+  },
+];
+
+export const GAMMA_D2_BLUEPRINT: PredictedD2Question[] = [
+  {
+    id: 'gamma-q1',
+    model: 'gamma',
+    qNo: 'Q1',
+    section: 'Section I (7 × 10M)',
+    marks: 10,
+    co: 'CO1',
+    bl: 'K3',
+    moduleId: 'm1',
+    targetTopicIds: ['m1-t3', 'm1-t4'],
+    title: 'Three-Schema Architecture, Data Independence & 2-Tier / 3-Tier Client-Server Models',
+    d1Counterpart: 'D1 Q1: DBMS Component Modules (6M) + Actors on the Scene (4M)',
+    gammaConsensusType: 'Unanimous Lock',
+    confidencePct: 95,
+    alphaVsBetaSummary: 'Alpha Q1 + Beta Q1 agree 100% — D1-negative gap matches the exact Vellore A1 Q1 ➔ A2 Q1 shift.',
+    subQuestions: [
+      {
+        part: '(a)',
+        marks: 6,
+        text: 'Design and explain the ANSI/SPARC Three-Schema Architecture for a multi-role enterprise database, drawing External, Conceptual, and Internal levels with both mappings and proving Logical vs. Physical Data Independence.',
+      },
+      {
+        part: '(b)',
+        marks: 4,
+        text: 'Contrast 2-Tier vs. 3-Tier Client-Server DBMS architectures (or justify selecting Relational, Semi-Structured JSON, Graph, Vector, and Time-Series models across workloads).',
+      },
+    ],
+    rationale: 'Highest-conviction Module 1 opening slot: both strict D1-negative elimination and empirical A1→A2 slot rotation independently select m1-t3 + m1-t4.',
+    vellorePrecedentTags: ['A1 Q1 ➔ A2 Q1', 'Alpha + Beta Lock'],
+  },
+  {
+    id: 'gamma-q2',
+    model: 'gamma',
+    qNo: 'Q2',
+    section: 'Section I (7 × 10M)',
+    marks: 10,
+    co: 'CO1',
+    bl: 'K3',
+    moduleId: 'm1',
+    targetTopicIds: ['m1-t6'],
+    title: 'Relational Integrity Constraints Audit & Referential Violation Actions (CASCADE / RESTRICT / SET NULL)',
+    d1Counterpart: 'D1 Q2: 5 Analytical SQL Queries (Integrity Constraints m1-t6 had 0M in D1)',
+    gammaConsensusType: 'Unanimous Lock',
+    confidencePct: 95,
+    alphaVsBetaSummary: 'Alpha Q2 + Beta Q2 agree 100% — untested in Chennai D1 yet a mandatory 10M CO1 anchor in BOTH A1 Q2 & A2 Q2.',
+    subQuestions: [
+      {
+        part: '(a)',
+        marks: 6,
+        text: 'Given a 3-table relational schema with populated tuples, audit 6 INSERT, UPDATE, and DELETE operations to identify exact Domain, Key, Entity Integrity (PK ≠ NULL), and Referential Integrity (FK) violations.',
+      },
+      {
+        part: '(b)',
+        marks: 4,
+        text: 'Trace the resulting child/parent table states under ON DELETE RESTRICT, ON DELETE CASCADE, and ON DELETE SET NULL, explaining which modification anomalies are prevented.',
+      },
+    ],
+    rationale: 'Unanimous top priority: the only Module 1 topic that appeared for a full 10M in BOTH Vellore slots while receiving zero marks in Chennai D1.',
+    vellorePrecedentTags: ['A1 Q2 [10M]', 'A2 Q2 [10M]', 'Alpha + Beta Lock'],
+  },
+  {
+    id: 'gamma-q3',
+    model: 'gamma',
+    qNo: 'Q3',
+    section: 'Section I (7 × 10M)',
+    marks: 10,
+    co: 'CO2',
+    bl: 'K3',
+    moduleId: 'm3',
+    targetTopicIds: ['m3-t2', 'm3-t3', 'm3-t1'],
+    title: 'Extendible / Linear Dynamic Hashing Trace + Multilevel Index Disk I/O & bfr Numerical',
+    d1Counterpart: 'D1 Q3: Order-4 B+ Tree Insert/Delete (6M) + Multilevel Indexing Theory (4M)',
+    gammaConsensusType: 'Consensus + Split',
+    confidencePct: 88,
+    alphaVsBetaSummary: 'Both models lock Dynamic Hashing (m3-t2); Gamma arbitrates part (b) to Beta\'s Multilevel Disk I/O Numerical (A2 Q4), which inherently evaluates bfr = floor(B/R) from Alpha\'s m3-t1.',
+    subQuestions: [
+      {
+        part: '(a)',
+        marks: 6,
+        text: 'Trace Extendible Hashing (global depth d, local depth d\', bucket capacity = 2) on an 8-key sequence showing bucket splits vs. directory doubling, and contrast with Linear Hashing split pointer n.',
+      },
+      {
+        part: '(b)',
+        marks: 4,
+        text: 'Multilevel Index Disk I/O Numerical: Given r records, block size B, record size R, key size V, and pointer size P, compute bfr, data blocks b, index fan-out bfr_i, number of index levels, and search block accesses.',
+      },
+    ],
+    rationale: 'Eliminates redundancy between Alpha\'s File Org math and Beta\'s Multilevel I/O math by combining the unanimous Dynamic Hashing lock with the A2 Q4 Disk I/O calculation (which tests blocking factor + multilevel math together).',
+    vellorePrecedentTags: ['A1 Q5(a)', 'A2 Q4 [10M]'],
+  },
+  {
+    id: 'gamma-q4',
+    model: 'gamma',
+    qNo: 'Q4',
+    section: 'Section I (7 × 10M)',
+    marks: 10,
+    co: 'CO2',
+    bl: 'K4',
+    moduleId: 'm3',
+    targetTopicIds: ['m3-t6', 'm3-t5', 'm3-t4'],
+    title: 'Heuristic Query Tree Optimization + Tuple Relational Calculus (TRC) & SQL/RA Equivalence',
+    d1Counterpart: 'D1 Q4: University RA Division/Grouping (6M) + LSM-Tree Compaction (4M)',
+    gammaConsensusType: 'Consensus + Split',
+    confidencePct: 90,
+    alphaVsBetaSummary: 'Both models lock Heuristic Query Tree Optimization (m3-t6, tested in BOTH A1 Q6 & A2 Q10b); Gamma pairs it with Alpha\'s untouched TRC (m3-t5) plus SQL/RA translation.',
+    subQuestions: [
+      {
+        part: '(a)',
+        marks: 6,
+        text: 'Translate a 3-table SQL query with WHERE filters into an Initial Canonical Query Tree, apply Heuristic Optimization steps (cascade σ, push σ down, convert ×+σ to ⋈, push π down), and justify intermediate tuple reduction.',
+      },
+      {
+        part: '(b)',
+        marks: 4,
+        text: 'Express 2 analytical queries in Tuple Relational Calculus (TRC) using existential (∃) and universal (∀) quantifiers (with corresponding SQL/RA form) and define safe vs. unsafe TRC expressions.',
+      },
+    ],
+    rationale: 'Locks in the #1 untouched Module 3 heavyweight (Heuristic Query Trees: 2-for-2 in Vellore, 0M in Chennai D1) while hedging both Alpha\'s TRC prediction and Beta\'s query-translation expectation.',
+    vellorePrecedentTags: ['A1 Q6 [10M]', 'A2 Q10(b) [10M]'],
+  },
+  {
+    id: 'gamma-q5',
+    model: 'gamma',
+    qNo: 'Q5',
+    section: 'Section I (7 × 10M)',
+    marks: 10,
+    co: 'CO3',
+    bl: 'K4',
+    moduleId: 'm4',
+    targetTopicIds: ['m4-t1', 'm4-t3'],
+    title: 'ACID Properties & Transaction State Diagram + Precedence Graph Conflict & View Serializability',
+    d1Counterpart: 'D1 Q5: 6-Class Schedule Classification (4 schedules)',
+    gammaConsensusType: 'Consensus + Split',
+    confidencePct: 90,
+    alphaVsBetaSummary: 'Both models lock ACID + State Diagram (m4-t1) in Q5(a); Gamma awards Q5(b) to Beta\'s Precedence Graph Anchor Repeat (present in D1 Q5, A1 Q7, AND A2 Q5b) while moving WFG Deadlocks to Q6(b).',
+    subQuestions: [
+      {
+        part: '(a)',
+        marks: 5,
+        text: 'Analyze ACID guarantees for a concurrent banking/reservation crash scenario and draw the 5-state Transaction State Transition Diagram (Active, Partially Committed, Committed, Failed, Aborted/Terminated).',
+      },
+      {
+        part: '(b)',
+        marks: 5,
+        text: 'Given two interleaved schedules S1 and S2, list all RW/WR/WW conflicts, draw Precedence Graphs, test Conflict Serializability (finding an equivalent serial order or cycle), and check View Serializability.',
+      },
+    ],
+    rationale: 'Mirrors Vellore A2 Q5 (5M ACID + 5M Precedence Graphs) directly — preserving Conflict Serializability\'s 100% presence across all 3 real FAT papers without sacrificing WFG Deadlocks (which move cleanly into Q6b).',
+    vellorePrecedentTags: ['A2 Q5 [10M]', 'A1 Q7 [10M]'],
+  },
+  {
+    id: 'gamma-q6',
+    model: 'gamma',
+    qNo: 'Q6',
+    section: 'Section I (7 × 10M)',
+    marks: 10,
+    co: 'CO3',
+    bl: 'K4',
+    moduleId: 'm4',
+    targetTopicIds: ['m4-t6', 'm4-t4'],
+    title: 'Deferred vs. Immediate WAL Crash Recovery Trace + WFG Deadlock Detection & Wait-Die / Wound-Wait',
+    d1Counterpart: 'D1 Q6: Strict 2PL (5M) + Basic TO vs. Thomas Write Rule (5M)',
+    gammaConsensusType: 'Unanimous Lock',
+    confidencePct: 94,
+    alphaVsBetaSummary: 'Combines two cross-model locks into one 10M slot: WAL Crash Recovery (Alpha Q6a + Beta Q6a) + WFG Deadlocks & Wait-Die/Wound-Wait (Alpha Q5b + Beta Q6b).',
+    subQuestions: [
+      {
+        part: '(a)',
+        marks: 5,
+        text: 'Given a WAL system log with [Start], [Write, Ti, X, old, new], [Commit], [Checkpoint], and SYSTEM CRASH, derive exact UNDO and REDO lists and final disk values under Deferred Update vs. Immediate Update (briefly noting Shadow Paging).',
+      },
+      {
+        part: '(b)',
+        marks: 5,
+        text: 'Trace a Strict 2PL schedule to construct the Wait-For Graph (WFG) deadlock cycle and pick a victim, then trace Wait-Die vs. Wound-Wait deadlock prevention for TS(T1) < TS(T2) < TS(T3).',
+      },
+    ],
+    rationale: 'Zero compromise needed: BOTH halves of Gamma Q6 are independently predicted by BOTH Alpha D2 and Beta D2 (keep Multiple Granularity IS/IX/SIX from Alpha Q6b as a 5-minute backup refresher).',
+    vellorePrecedentTags: ['A1 Q8(b) [10M]', 'A2 Q6 [10M]', 'Alpha + Beta Lock'],
+  },
+  {
+    id: 'gamma-q7',
+    model: 'gamma',
+    qNo: 'Q7',
+    section: 'Section I (7 × 10M)',
+    marks: 10,
+    co: 'CO2',
+    bl: 'K4',
+    moduleId: 'm2',
+    targetTopicIds: ['m2-t5'],
+    title: 'Stage-by-Stage 1NF → 2NF → 3NF → BCNF Normalization (Fresh Domain) & 3NF vs. BCNF Trade-Off Proof',
+    d1Counterpart: 'D1 Q7: Multispecialty Hospital 1NF → 5NF Normalization (10M · CO2)',
+    gammaConsensusType: 'Arbitrated Anchor',
+    confidencePct: 86,
+    alphaVsBetaSummary: 'Resolves the biggest Alpha vs. Beta clash (CAP vs. Normalization): keeps Normalization in Q7 (exact D1 Q7 CO2 slot, 3-for-3 exam streak) and puts CAP Theorem into Q9(i) so BOTH are covered!',
+    subQuestions: [
+      {
+        part: '(a)',
+        marks: 6,
+        text: 'Given an unnormalized multi-attribute table in a fresh domain (e.g., University Project Evaluation or E-Commerce Order), identify FDs and Candidate Key(s), audit 2NF/3NF/BCNF violations, and decompose into lossless BCNF tables with PKs and FKs.',
+      },
+      {
+        part: '(b)',
+        marks: 4,
+        text: 'Demonstrate with a counterexample why a relation in 3NF can still violate BCNF (overlapping candidate keys), comparing 3NF Synthesis (dependency-preserving) vs. BCNF Decomposition (possible FD loss).',
+      },
+    ],
+    rationale: 'Normalization has appeared in 100% of real FAT papers (A1 Q4, A2 Q9a, D1 Q7). By pivoting away from D1\'s 4NF/5NF toward 3NF-vs-BCNF dependency preservation and moving CAP Theorem to Q9(i), Gamma covers both anchors cleanly.',
+    vellorePrecedentTags: ['A1 Q4 ➔ A2 Q9(a)', '3-for-3 Anchor'],
+  },
+  {
+    id: 'gamma-q8',
+    model: 'gamma',
+    qNo: 'Q8',
+    section: 'Section II (2 × 15M)',
+    marks: 15,
+    co: 'CO5',
+    bl: 'K4',
+    moduleId: 'm2',
+    targetTopicIds: ['m2-t1', 'm2-t2', 'm2-t4'],
+    title: 'Complete EER Diagram Design (Weak Entities + Specialization Lattice) + Minimal Cover & Lossless Chase',
+    d1Counterpart: 'D1 Q8 (15M): Hotel ER-to-Relational Mapping (8M) + R(P,Q,R,S,T) Closure/Keys (7M)',
+    gammaConsensusType: 'Unanimous Lock',
+    confidencePct: 95,
+    alphaVsBetaSummary: 'Alpha Q8 + Beta Q8 agree 100% — flips both halves of Chennai D1 Q8 into drawing the EER diagram (A1 Q3 / A2 Q3 / A2 Q9b) + computing Minimal Cover & Lossless Chase.',
+    subQuestions: [
+      {
+        part: '(i)',
+        marks: 8,
+        text: 'Design a complete Extended ER (EER) diagram from business rules featuring a Weak Entity with partial key, composite/multivalued attributes, Disjoint (d) / Overlapping (o) Specialization & Shared Subclass (Lattice), and recommend the best EER mapping option (8A–8D).',
+      },
+      {
+        part: '(ii)',
+        marks: 7,
+        text: 'Given relation R(A,B,C,D,E) and redundant FD set F: (a) Compute the Canonical/Minimal Cover step-by-step (4M), and (b) Prove Lossless-Join and Dependency-Preservation via Chase test / FD equivalence (3M).',
+      },
+    ],
+    rationale: 'Highest-confidence 15M Section II blueprint: unanimous agreement across Alpha and Beta, backed by three separate Vellore EER modeling questions (A1 Q3, A2 Q3, A2 Q9b).',
+    vellorePrecedentTags: ['A1 Q3', 'A2 Q3', 'A2 Q9(b)', 'Alpha + Beta Lock'],
+  },
+  {
+    id: 'gamma-q9',
+    model: 'gamma',
+    qNo: 'Q9',
+    section: 'Section II (2 × 15M)',
+    marks: 15,
+    co: 'CO4',
+    bl: 'K4',
+    moduleId: 'm5',
+    targetTopicIds: ['m5-t4', 'm5-t6', 'm5-t3'],
+    title: 'CAP Theorem + 4 NoSQL Types / Polyglot JSON Schema + Two-Phase Commit (2PC) & Semijoin Cost',
+    d1Counterpart: 'D1 Q9 (15M): 3-Campus Horizontal Fragmentation (8M) + MapReduce Average Rating (7M)',
+    gammaConsensusType: 'Unanimous Lock',
+    confidencePct: 95,
+    alphaVsBetaSummary: 'Unifies Alpha Q7/Q9 + Beta Q9 into one pure CO4/M5 15M capstone packing all three untouched Module 5 pillars (5M + 5M + 5M = 15M).',
+    subQuestions: [
+      {
+        part: '(i)',
+        marks: 5,
+        text: 'Analyze a multi-region system hit by a network partition using the CAP Theorem (justify CP vs. AP trade-offs across subsystems) and contrast ACID vs. BASE consistency models.',
+      },
+      {
+        part: '(ii)',
+        marks: 5,
+        text: 'Select optimal NoSQL database models (Key-Value, Document, Wide-Column, Graph) for a high-scale Polyglot platform and write a concrete nested JSON/BSON document or Graph schema.',
+      },
+      {
+        part: '(iii)',
+        marks: 5,
+        text: 'Trace the Two-Phase Commit (2PC) distributed transaction protocol (Prepare & Commit phases + Coordinator crash blocking) OR compute Semijoin (R ⋉ S) distributed query network transfer savings.',
+      },
+    ],
+    rationale: 'Pure CO4 capstone: Chennai D1 Q9 spent all 15M on Fragmentation + MapReduce, leaving CAP Theorem (tested in BOTH A1 Q10 & A2 Q7), 4 NoSQL Types (A2 Q8), and 2PC/Semijoin 100% open.',
+    vellorePrecedentTags: ['A1 Q10', 'A2 Q7', 'A2 Q8', 'Alpha + Beta Lock'],
+  },
+];
+
 export function computePredictionStats(matrix: TopicPredictionEntry[]): PredictionSummaryStats {
   const untestedInD1 = matrix.filter((t) => t.d1Status === 'untested').length;
   const partialInD1 = matrix.filter((t) => t.d1Status === 'partial').length;
@@ -1298,8 +1723,13 @@ export function computePredictionStats(matrix: TopicPredictionEntry[]): Predicti
     partialWithVelloreProof,
     alphaTotalMarks: ALPHA_D2_BLUEPRINT.reduce((s, q) => s + q.marks, 0),
     betaTotalMarks: BETA_D2_BLUEPRINT.reduce((s, q) => s + q.marks, 0),
+    gammaTotalMarks: GAMMA_D2_BLUEPRINT.reduce((s, q) => s + q.marks, 0),
     betaRotationCount: BETA_D2_BLUEPRINT.filter((q) => q.betaMechanism === 'Sibling Rotation').length,
     betaRepeatCount: BETA_D2_BLUEPRINT.filter((q) => q.betaMechanism === 'Anchor Repeat').length,
+    gammaUnanimousCount: GAMMA_D2_BLUEPRINT.filter(
+      (q) => q.gammaConsensusType === 'Unanimous Lock'
+    ).length,
+    gammaTopicCoverageCount: matrix.filter((t) => t.inGammaD2).length,
   };
 }
 

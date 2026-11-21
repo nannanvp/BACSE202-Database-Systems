@@ -7,6 +7,7 @@ import {
   Compass,
   GitCompareArrows,
   Layers,
+  Merge,
   Target,
 } from 'lucide-react';
 import { MODULES } from '../data/bacse202Data';
@@ -18,6 +19,9 @@ import {
   buildTopicPredictionMatrix,
   computePredictionStats,
   filterPredictionMatrix,
+  GAMMA_D2_BLUEPRINT,
+  GAMMA_SYNTHESIS_ROWS,
+  GammaConsensusType,
   PredictedD2Question,
   PredictionCoverageFilter,
   TopicPredictionEntry,
@@ -27,7 +31,13 @@ import { ConceptDiagram } from './ConceptDiagrams';
 import { MarkdownBlock } from './MarkdownBlock';
 import type { DivisionColorMeta } from './WeakTopicsPanel';
 
-type PredictionLens = 'matrix' | 'alpha' | 'beta';
+type PredictionLens = 'matrix' | 'alpha' | 'beta' | 'gamma';
+
+const GAMMA_CONSENSUS_BADGE_CLASS: Record<GammaConsensusType, string> = {
+  'Unanimous Lock': 'bg-[#4F8A3D] text-[#FAF7F0]',
+  'Consensus + Split': 'bg-[#E5B82E] text-[#1C1B18]',
+  'Arbitrated Anchor': 'bg-[#6B21A8] text-[#FAF7F0]',
+};
 
 interface PredictionViewProps {
   divisionColors: Record<ModuleId, DivisionColorMeta>;
@@ -229,6 +239,18 @@ const BlueprintQuestionCard: React.FC<{
                 {item.betaMechanism}
               </span>
             )}
+            {item.gammaConsensusType && (
+              <span
+                className={`px-2 py-0.5 font-bold rounded-[2px] border border-[#1C1B18] ${GAMMA_CONSENSUS_BADGE_CLASS[item.gammaConsensusType]}`}
+              >
+                {item.gammaConsensusType}
+              </span>
+            )}
+            {typeof item.confidencePct === 'number' && (
+              <span className="px-2 py-0.5 font-bold rounded-[2px] border border-[#1C1B18] dark:border-[#4A463E] bg-[#F4EFE4] dark:bg-[#2B2822] text-[#1C1B18] dark:text-[#E6E2DA]">
+                {item.confidencePct}% Match
+              </span>
+            )}
           </div>
 
           <h3 className="text-base sm:text-lg font-extrabold text-[#1C1B18] dark:text-[#E6E2DA] leading-snug">
@@ -262,10 +284,14 @@ const BlueprintQuestionCard: React.FC<{
         </div>
         <div className="space-y-1">
           <div className="font-mono font-bold uppercase tracking-wider text-[10px] text-[#6E695D] dark:text-[#A39D91]">
-            {item.a1a2Precedent ? 'Empirical Vellore A1 → A2 Precedent' : 'D1-Negative Rationale'}
+            {item.alphaVsBetaSummary
+              ? 'Alpha vs. Beta ➔ Gamma Synthesis'
+              : item.a1a2Precedent
+                ? 'Empirical Vellore A1 → A2 Precedent'
+                : 'D1-Negative Rationale'}
           </div>
           <p className="text-[#1C1B18] dark:text-[#E6E2DA] leading-relaxed">
-            {item.a1a2Precedent ?? item.rationale}
+            {item.alphaVsBetaSummary ?? item.a1a2Precedent ?? item.rationale}
           </p>
         </div>
       </div>
@@ -288,11 +314,20 @@ const BlueprintQuestionCard: React.FC<{
         ))}
       </div>
 
-      {/* Rationale (when Beta already showed precedent above) & Syllabus Jump Links */}
+      {/* Rationale (when Beta or Gamma already showed mapping above) & Syllabus Jump Links */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-        {item.a1a2Precedent ? (
+        {item.alphaVsBetaSummary ? (
           <p className="text-xs text-[#434038] dark:text-[#B8B2A6] leading-relaxed flex-1">
-            <span className="font-bold text-[#1C1B18] dark:text-[#E6E2DA]">Why Beta D2 predicts this: </span>
+            <span className="font-bold text-[#1C1B18] dark:text-[#E6E2DA]">
+              Why Gamma D2 predicts this:{' '}
+            </span>
+            {item.rationale}
+          </p>
+        ) : item.a1a2Precedent ? (
+          <p className="text-xs text-[#434038] dark:text-[#B8B2A6] leading-relaxed flex-1">
+            <span className="font-bold text-[#1C1B18] dark:text-[#E6E2DA]">
+              Why Beta D2 predicts this:{' '}
+            </span>
             {item.rationale}
           </p>
         ) : (
@@ -362,7 +397,7 @@ export const PredictionView: React.FC<PredictionViewProps> = ({
 
   const renderBlueprintSections = (
     blueprint: PredictedD2Question[],
-    model: 'alpha' | 'beta'
+    model: 'alpha' | 'beta' | 'gamma'
   ) => {
     const sec1 = blueprint.filter((q) => q.marks === 10);
     const sec2 = blueprint.filter((q) => q.marks === 15);
@@ -416,18 +451,18 @@ export const PredictionView: React.FC<PredictionViewProps> = ({
 
   return (
     <div className="space-y-6" data-testid="prediction-view">
-      {/* Header + 3-Lens Switcher (h1 FIRST — zero eyebrow kicker above h1) */}
+      {/* Header + 4-Lens Switcher (h1 FIRST — zero eyebrow kicker above h1) */}
       <div className="bg-[#FAF7F0] dark:bg-[#201E1A] border border-[#1C1B18] dark:border-[#3A3731] rounded-[4px] p-5 sm:p-6 space-y-4">
         <div className="space-y-1.5">
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1C1B18] dark:text-[#E6E2DA]">
             D2 Slot Exam Prediction &amp; D1 Negative Matrix
           </h1>
           <p className="text-xs font-mono text-[#6E695D] dark:text-[#A39D91]">
-            PRIMARY: VIT CHENNAI D1+TD1 NEGATIVE (7×10M + 2×15M) · SECONDARY: VELLORE A1+TA1 &amp; A2+TA2 PROOF · ALPHA D2 &amp; BETA D2 FORECASTS
+            PRIMARY: VIT CHENNAI D1+TD1 NEGATIVE (7×10M + 2×15M) · SECONDARY: VELLORE A1+TA1 &amp; A2+TA2 PROOF · ALPHA, BETA &amp; GAMMA D2 CONSENSUS FORECASTS
           </p>
         </div>
 
-        {/* 3-Lens Segmented Control — Dedicated Full-Width Bar (Single-Line on Desktop) */}
+        {/* 4-Lens Segmented Control — Dedicated Full-Width Bar (Single-Line on Desktop) */}
         <div
           role="tablist"
           aria-label="Prediction view modes"
@@ -459,7 +494,7 @@ export const PredictionView: React.FC<PredictionViewProps> = ({
             }`}
           >
             <Target className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Alpha D2 (D1-Negative 100M)</span>
+            <span>Alpha D2 (D1-Negative)</span>
           </button>
           <button
             type="button"
@@ -473,17 +508,31 @@ export const PredictionView: React.FC<PredictionViewProps> = ({
             }`}
           >
             <GitCompareArrows className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Beta D2 (A1→A2 Pattern 100M)</span>
+            <span>Beta D2 (A1→A2 Pattern)</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeLens === 'gamma'}
+            onClick={() => setActiveLens('gamma')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-[4px] border border-[#1C1B18] dark:border-[#3A3731] step-hinge whitespace-nowrap shrink-0 ${
+              activeLens === 'gamma'
+                ? 'bg-[#E5B82E] text-[#1C1B18]'
+                : 'bg-[#FAF7F0] dark:bg-[#26231E] text-[#1C1B18] dark:text-[#E6E2DA] hover:bg-[#EAE4D7] dark:hover:bg-[#312E29]'
+            }`}
+          >
+            <Merge className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>Gamma D2 (Consensus 100M)</span>
           </button>
         </div>
 
         {/* Live Computed KPI Strip */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-4 border-t border-[#1C1B18] dark:border-[#3A3731]">
-          <div className="p-3 bg-[#F4EFE4] dark:bg-[#26231E] border border-[#C5BEB0] dark:border-[#3A3731] rounded-[4px]">
+          <div className="min-w-0 p-3 bg-[#F4EFE4] dark:bg-[#26231E] border border-[#C5BEB0] dark:border-[#3A3731] rounded-[4px]">
             <div className="text-[11px] font-mono uppercase tracking-wider text-[#6E695D] dark:text-[#A39D91]">
               Untested in Chennai D1
             </div>
-            <div className="mt-1 text-base sm:text-xl font-extrabold font-mono text-[#E06D2B] tabular-nums whitespace-nowrap">
+            <div className="mt-1 text-sm sm:text-xl font-extrabold font-mono text-[#E06D2B] tabular-nums whitespace-nowrap">
               {stats.untestedInD1} / {stats.totalTopics}
             </div>
             <div className="text-[11px] text-[#434038] dark:text-[#B8B2A6]">
@@ -491,11 +540,11 @@ export const PredictionView: React.FC<PredictionViewProps> = ({
             </div>
           </div>
 
-          <div className="p-3 bg-[#F4EFE4] dark:bg-[#26231E] border border-[#C5BEB0] dark:border-[#3A3731] rounded-[4px]">
+          <div className="min-w-0 p-3 bg-[#F4EFE4] dark:bg-[#26231E] border border-[#C5BEB0] dark:border-[#3A3731] rounded-[4px]">
             <div className="text-[11px] font-mono uppercase tracking-wider text-[#6E695D] dark:text-[#A39D91]">
               D1 Gaps Proven in A1/A2
             </div>
-            <div className="mt-1 text-base sm:text-xl font-extrabold font-mono text-[#147E7B] dark:text-[#55C7C3] tabular-nums whitespace-nowrap">
+            <div className="mt-1 text-sm sm:text-xl font-extrabold font-mono text-[#147E7B] dark:text-[#55C7C3] tabular-nums whitespace-nowrap">
               {stats.untestedWithVelloreProof} Topics
             </div>
             <div className="text-[11px] text-[#434038] dark:text-[#B8B2A6]">
@@ -503,27 +552,27 @@ export const PredictionView: React.FC<PredictionViewProps> = ({
             </div>
           </div>
 
-          <div className="p-3 bg-[#F4EFE4] dark:bg-[#26231E] border border-[#C5BEB0] dark:border-[#3A3731] rounded-[4px]">
+          <div className="min-w-0 p-3 bg-[#F4EFE4] dark:bg-[#26231E] border border-[#C5BEB0] dark:border-[#3A3731] rounded-[4px]">
             <div className="text-[11px] font-mono uppercase tracking-wider text-[#6E695D] dark:text-[#A39D91]">
-              Alpha D2 Forecast
+              Alpha &amp; Beta Models
             </div>
-            <div className="mt-1 text-base sm:text-xl font-extrabold font-mono text-[#1C1B18] dark:text-[#E6E2DA] tabular-nums whitespace-nowrap">
-              {stats.alphaTotalMarks}M (9 Qs)
+            <div className="mt-1 text-sm sm:text-xl font-extrabold font-mono text-[#22559C] dark:text-[#78A6EC] tabular-nums whitespace-nowrap">
+              {stats.alphaTotalMarks}M Each
             </div>
             <div className="text-[11px] text-[#434038] dark:text-[#B8B2A6]">
-              Strict complement of D1+TD1
+              D1-Neg · Beta {stats.betaRotationCount} Rot / {stats.betaRepeatCount} Rep
             </div>
           </div>
 
-          <div className="p-3 bg-[#F4EFE4] dark:bg-[#26231E] border border-[#C5BEB0] dark:border-[#3A3731] rounded-[4px]">
+          <div className="min-w-0 p-3 bg-[#F4EFE4] dark:bg-[#26231E] border border-[#C5BEB0] dark:border-[#3A3731] rounded-[4px]">
             <div className="text-[11px] font-mono uppercase tracking-wider text-[#6E695D] dark:text-[#A39D91]">
-              Beta D2 Forecast
+              Gamma D2 Consensus
             </div>
-            <div className="mt-1 text-base sm:text-xl font-extrabold font-mono text-[#22559C] dark:text-[#78A6EC] tabular-nums whitespace-nowrap">
-              {stats.betaRotationCount} Rot · {stats.betaRepeatCount} Rep
+            <div className="mt-1 text-sm sm:text-xl font-extrabold font-mono text-[#4F8A3D] dark:text-[#7BC465] tabular-nums whitespace-nowrap">
+              {stats.gammaUnanimousCount} Locks · {stats.gammaTotalMarks}M
             </div>
             <div className="text-[11px] text-[#434038] dark:text-[#B8B2A6]">
-              Empirical A1→A2 pattern · {stats.betaTotalMarks}M
+              Alpha + Beta synthesis · {stats.gammaTopicCoverageCount} topics
             </div>
           </div>
         </div>
@@ -700,7 +749,7 @@ export const PredictionView: React.FC<PredictionViewProps> = ({
                                 </span>
                               ))}
 
-                              {/* ALPHA & BETA FORECAST TAGS */}
+                              {/* ALPHA, BETA & GAMMA FORECAST TAGS */}
                               {entry.inAlphaD2 && entry.alphaD2SlotRef && (
                                 <button
                                   type="button"
@@ -717,6 +766,15 @@ export const PredictionView: React.FC<PredictionViewProps> = ({
                                   className="px-2 py-0.5 text-[11px] font-mono font-bold bg-[#FAF7F0] dark:bg-[#171613] text-[#6B21A8] dark:text-[#C084FC] border border-[#6B21A8] dark:border-[#C084FC] rounded-[2px] hover:bg-[#F3E8FF] dark:hover:bg-[#2B2036]"
                                 >
                                   {entry.betaD2SlotRef}
+                                </button>
+                              )}
+                              {entry.inGammaD2 && entry.gammaD2SlotRef && (
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveLens('gamma')}
+                                  className="px-2 py-0.5 text-[11px] font-mono font-bold bg-[#FAF7F0] dark:bg-[#171613] text-[#4F8A3D] dark:text-[#7BC465] border border-[#4F8A3D] dark:border-[#7BC465] rounded-[2px] hover:bg-[#EAF5E5] dark:hover:bg-[#1D2B1A]"
+                                >
+                                  {entry.gammaD2SlotRef}
                                 </button>
                               )}
                             </div>
@@ -909,6 +967,109 @@ export const PredictionView: React.FC<PredictionViewProps> = ({
           </section>
 
           {renderBlueprintSections(BETA_D2_BLUEPRINT, 'beta')}
+        </div>
+      )}
+
+      {/* ====================================================================
+          LENS 4: GAMMA D2 BLUEPRINT (ENSEMBLE CONSENSUS OF ALPHA + BETA)
+         ==================================================================== */}
+      {activeLens === 'gamma' && (
+        <div className="space-y-6">
+          <section
+            className="bg-[#FAF7F0] dark:bg-[#201E1A] border border-[#1C1B18] dark:border-[#3A3731] rounded-[4px] p-5 space-y-4"
+            data-testid="gamma-arbitration-matrix"
+          >
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-lg sm:text-xl font-extrabold text-[#1C1B18] dark:text-[#E6E2DA]">
+                  Gamma D2 — Ensemble Consensus Blueprint (Alpha + Beta Synthesis · 100M)
+                </h2>
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono tabular-nums">
+                  <span className="px-2 py-0.5 font-bold rounded-[2px] border border-[#1C1B18] bg-[#4F8A3D] text-[#FAF7F0]">
+                    {stats.gammaUnanimousCount} Unanimous Locks
+                  </span>
+                  <span className="px-2 py-0.5 font-bold rounded-[2px] border border-[#1C1B18] bg-[#E5B82E] text-[#1C1B18]">
+                    3 Consensus + Split
+                  </span>
+                  <span className="px-2 py-0.5 font-bold rounded-[2px] border border-[#1C1B18] bg-[#6B21A8] text-[#FAF7F0]">
+                    1 Arbitrated Anchor
+                  </span>
+                </div>
+              </div>
+              <p className="text-sm text-[#434038] dark:text-[#CBC5B9] leading-relaxed">
+                <strong>Synthesis Rule:</strong> Wherever <strong>Alpha D2</strong> (strict VIT
+                Chennai D1-negative) and <strong>Beta D2</strong> (empirical Vellore A1→A2 slot
+                mutation) independently select the same topic, Gamma locks it verbatim (
+                <strong>5 of 9 slots</strong>). Where they diverge on sub-parts or Q7, Gamma
+                arbitrates using 3-paper exam frequency and CO alignment so{' '}
+                <strong>zero high-yield topic is dropped</strong>—keeping 1NF→BCNF Normalization in
+                Q7 (CO2) while promoting CAP Theorem cleanly into Q9(i) (CO4).
+              </p>
+            </div>
+
+            <div className="overflow-x-auto border border-[#1C1B18] dark:border-[#3A3731] rounded-[4px]">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-[#EAE4D7] dark:bg-[#2A2722] border-b border-[#1C1B18] dark:border-[#3A3731] font-mono text-[11px] uppercase tracking-wider text-[#1C1B18] dark:text-[#E6E2DA]">
+                    <th className="p-3 font-bold">Slot &amp; Status</th>
+                    <th className="p-3 font-bold">Alpha D2 (D1-Negative)</th>
+                    <th className="p-3 font-bold">Beta D2 (A1→A2 Pattern)</th>
+                    <th className="p-3 font-bold">Gamma D2 Consensus Decision</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#C5BEB0] dark:divide-[#3A3731]">
+                  {GAMMA_SYNTHESIS_ROWS.map((row) => {
+                    const modColor = divisionColors[row.moduleId];
+                    const lightText = MODULE_TEXT_LIGHT[row.moduleId];
+                    return (
+                      <tr
+                        key={row.id}
+                        className="align-top bg-[#FAF7F0] dark:bg-[#201E1A] hover:bg-[#F4EFE4] dark:hover:bg-[#26231E]"
+                      >
+                        <td className="p-3 space-y-1.5 min-w-[165px]">
+                          <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] tabular-nums">
+                            <span className="px-1.5 py-0.5 font-extrabold bg-[#E5B82E] text-[#1C1B18] border border-[#1C1B18] rounded-[2px]">
+                              {row.qNo} · {row.marks}M
+                            </span>
+                            <span
+                              style={{
+                                backgroundColor: modColor.hex,
+                                color: lightText ? '#FAF7F0' : '#1C1B18',
+                              }}
+                              className="px-1.5 py-0.5 font-bold border border-[#1C1B18] rounded-[2px]"
+                            >
+                              {modColor.code}
+                            </span>
+                            <span className="font-bold text-[#1C1B18] dark:text-[#E6E2DA]">
+                              {row.confidencePct}%
+                            </span>
+                          </div>
+                          <div>
+                            <span
+                              className={`inline-block px-2 py-0.5 text-[10px] font-mono font-bold rounded-[2px] border border-[#1C1B18] ${GAMMA_CONSENSUS_BADGE_CLASS[row.consensusType]}`}
+                            >
+                              {row.consensusType}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-[#434038] dark:text-[#CBC5B9] leading-relaxed min-w-[185px]">
+                          {row.alphaPick}
+                        </td>
+                        <td className="p-3 text-[#434038] dark:text-[#CBC5B9] leading-relaxed min-w-[185px]">
+                          {row.betaPick}
+                        </td>
+                        <td className="p-3 font-semibold text-[#1C1B18] dark:text-[#E6E2DA] leading-relaxed min-w-[220px]">
+                          {row.gammaDecision}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {renderBlueprintSections(GAMMA_D2_BLUEPRINT, 'gamma')}
         </div>
       )}
     </div>
