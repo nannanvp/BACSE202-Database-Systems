@@ -31,7 +31,6 @@ import {
   A2_TA2_PAPER,
   D1_TD1_PAPER,
   GENERATED_SLOT_PAPER,
-  OFFICIAL_MODEL_PAPER,
   SLOT_PAPER_FORENSICS,
 } from '../data/slotPaperAnalysis';
 
@@ -172,21 +171,19 @@ test('Every BACSE202 syllabus topic across Modules 1-5 has complete study notes'
   }
 });
 
-test('Slot paper forensics cover all 4 official papers (D1+TD1, A1+TA1, A2+TA2, MODEL_QP = 100M each) and slot blueprints match 100M total', () => {
+test('Slot paper forensics cover all 3 real FAT papers (D1+TD1, A1+TA1, A2+TA2 = 100M each) and practice blueprint matches 100M total', () => {
   const d1Items = SLOT_PAPER_FORENSICS.filter((i) => i.slot === 'D1+TD1');
   const a1Items = SLOT_PAPER_FORENSICS.filter((i) => i.slot === 'A1+TA1');
   const a2Items = SLOT_PAPER_FORENSICS.filter((i) => i.slot === 'A2+TA2');
-  const modelItems = SLOT_PAPER_FORENSICS.filter((i) => i.slot === 'MODEL_QP');
+  assert.equal(SLOT_PAPER_FORENSICS.length, 29);
   assert.equal(d1Items.length, 9);
   assert.equal(a1Items.length, 10);
   assert.equal(a2Items.length, 10);
-  assert.equal(modelItems.length, 10);
   assert.equal(d1Items.reduce((s, i) => s + i.marks, 0), 100);
   assert.equal(a1Items.reduce((s, i) => s + i.marks, 0), 100);
   assert.equal(a2Items.reduce((s, i) => s + i.marks, 0), 100);
-  assert.equal(modelItems.reduce((s, i) => s + i.marks, 0), 100);
 
-  for (const paper of [OFFICIAL_MODEL_PAPER, GENERATED_SLOT_PAPER]) {
+  for (const paper of [GENERATED_SLOT_PAPER]) {
     assert.equal(paper.length, 10);
     const totalPaperMarks = paper.reduce((s, q) => s + q.marks, 0);
     assert.equal(totalPaperMarks, 100);
@@ -625,7 +622,7 @@ test('simulateBPlusOperations accurately verifies Model QP Q6, A1+TA1 Q5(b), and
   assert.deepEqual(collectLeaves(a2Sim.finalTree), [[5], [15], [25], [30], [35, 40]]);
 });
 
-test('A1_TA1_PAPER, A2_TA2_PAPER, OFFICIAL_MODEL_PAPER, and GENERATED_SLOT_PAPER cover Q1-Q10 in exact order with topic tags and valid diagrams', async () => {
+test('A1_TA1_PAPER, A2_TA2_PAPER, and GENERATED_SLOT_PAPER cover Q1-Q10 in exact order with topic tags and valid diagrams', async () => {
   const { DIAGRAM_REGISTRY } = await import('../components/ConceptDiagrams');
   const registeredIds = new Set(Object.keys(DIAGRAM_REGISTRY));
   const topicIds = new Set(Object.keys(TOPIC_NOTES));
@@ -633,7 +630,6 @@ test('A1_TA1_PAPER, A2_TA2_PAPER, OFFICIAL_MODEL_PAPER, and GENERATED_SLOT_PAPER
   const papers = [
     { name: 'A1_TA1_PAPER', items: A1_TA1_PAPER },
     { name: 'A2_TA2_PAPER', items: A2_TA2_PAPER },
-    { name: 'OFFICIAL_MODEL_PAPER', items: OFFICIAL_MODEL_PAPER },
     { name: 'GENERATED_SLOT_PAPER', items: GENERATED_SLOT_PAPER },
   ];
 

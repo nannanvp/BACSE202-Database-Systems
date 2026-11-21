@@ -9,6 +9,7 @@ import { StandingView } from './components/StandingView';
 import { SprintPlannerView } from './components/SprintPlannerView';
 import { SyllabusView } from './components/SyllabusView';
 import { ReferenceView } from './components/ReferenceView';
+import { PredictionView } from './components/PredictionView';
 import { InteractiveLabsView, LabId } from './components/InteractiveLabsView';
 import { FatMockView, MockPresetRequest } from './components/FatMockView';
 import { ExamCountdown } from './components/ExamCountdown';
@@ -46,7 +47,7 @@ import {
   serializeDarkModePreference,
 } from './utils/darkModeEngine';
 
-type AppView = 'standing' | 'plan' | 'syllabus' | 'reference' | 'labs' | 'mock';
+type AppView = 'standing' | 'plan' | 'syllabus' | 'reference' | 'prediction' | 'labs' | 'mock';
 type ModuleId = 'm1' | 'm2' | 'm3' | 'm4' | 'm5';
 
 const STORAGE_KEYS = {
@@ -608,7 +609,8 @@ export default function App() {
     { id: 'plan', label: '48h Plan' },
     { id: 'syllabus', label: 'Syllabus' },
     { id: 'reference', label: 'Reference' },
-    { id: 'labs', label: 'Interactive Labs' },
+    { id: 'prediction', label: 'Prediction' },
+    { id: 'labs', label: 'Labs' },
     { id: 'mock', label: 'FAT Mock', isMock: true },
   ];
 
@@ -748,7 +750,7 @@ export default function App() {
               </button>
 
               {/* Zone 2: Single-line text nav links (Standing first with #6B21A8 accent) */}
-              <nav aria-label="Primary navigation" className="hidden md:flex items-center gap-4 lg:gap-5">
+              <nav aria-label="Primary navigation" className="hidden md:flex items-center gap-3 lg:gap-4">
                 {navItems.map((item) => {
                   const isActive = activeView === item.id;
                   const activeBorder = item.isStanding
@@ -1009,6 +1011,27 @@ export default function App() {
                 lockedTrapIds={lockedTrapIds}
                 onToggleTrap={toggleTrapLocked}
                 onResetTraps={() => setLockedTrapIds([])}
+              />
+            )}
+
+            {activeView === 'prediction' && (
+              <PredictionView
+                divisionColors={DIVISION_WHEEL}
+                onNavigateToTopic={(modId, topicId) => {
+                  setActiveModuleId(modId);
+                  setFocusedTopicId(topicId);
+                  setActiveView('syllabus');
+                }}
+                onOpenFatPaper={(paperSet, qRef) => {
+                  setMockPresetRequest({
+                    subView: 'slot_paper',
+                    moduleId: 'all',
+                    paperSet,
+                    qRef,
+                    nonce: Date.now(),
+                  });
+                  setActiveView('mock');
+                }}
               />
             )}
 

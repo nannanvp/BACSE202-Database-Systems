@@ -1259,20 +1259,6 @@ const BPLUS_PRESETS: BPlusPreset[] = [
     note: 'VIT Chennai D1+TD1 Q3(i): Order 4 inserts [10..70] then Delete 40 (right borrow), 50 (leaf merge), 60 (left borrow).',
   },
   {
-    id: 'model_q6',
-    label: 'Model QP Q6(a)/(b) (p = 4)',
-    order: 4,
-    ops: [
-      ...[24, 45, 11, 89, 55, 67, 49, 38, 7, 23, 12, 78, 97, 36, 21].map((key) => ({
-        type: 'insert' as const,
-        key,
-      })),
-      ...[38, 12, 89].map((key) => ({ type: 'delete' as const, key })),
-    ],
-    searchKey: '21',
-    note: 'Official Model QP Q6: 15 inserts then Delete 38, 12, 89 (leaf borrow + Case II separator update).',
-  },
-  {
     id: 'a1_q5b',
     label: 'A1+TA1 Q5(b) (p = 3)',
     order: 3,

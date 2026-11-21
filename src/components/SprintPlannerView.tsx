@@ -63,7 +63,7 @@ const APP_IMPROVEMENT_ROADMAP: UpgradeRoadmapItem[] = [
     order: 1,
     title: 'Upgrade B+ Tree Lab: Deletion, Step Replay & FAT Exam Presets',
     detail:
-      'Supports key deletion (leaf/internal borrow & merge, Case II inorder-successor separator updates, root collapse), step-by-step replay controls, and 1-click Model QP Q6(a)/(b), A1+TA1 Q5(b), & A2+TA2 Q10(a) presets.',
+      'Supports key deletion (leaf/internal borrow & merge, Case II inorder-successor separator updates, root collapse), step-by-step replay controls, and 1-click VIT Chennai D1+TD1 Q3(i), A1+TA1 Q5(b), & A2+TA2 Q10(a) presets.',
     actionKind: 'lab',
     targetLab: 'bplus',
     actionLabel: 'Open B+ Tree Lab',

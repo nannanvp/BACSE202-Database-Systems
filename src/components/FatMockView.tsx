@@ -19,7 +19,6 @@ import {
   D1_TD1_PAPER,
   GENERATED_SLOT_PAPER,
   GeneratedSlotOption,
-  OFFICIAL_MODEL_PAPER,
   SLOT_BLUEPRINT_INSIGHTS,
   SLOT_PAPER_FORENSICS,
   SlotId,
@@ -30,8 +29,10 @@ import { ModuleId, WeakTopicEntry } from '../utils/standingEngine';
 import { DivisionColorMeta, WeakTopicsPanel } from './WeakTopicsPanel';
 
 export interface MockPresetRequest {
-  subView: 'mcq' | 'weak_topics';
+  subView: 'mcq' | 'weak_topics' | 'slot_paper';
   moduleId: 'all' | 'm1' | 'm2' | 'm3' | 'm4' | 'm5';
+  paperSet?: 'd1' | 'a1' | 'a2' | 'predicted';
+  qRef?: string;
   nonce: number;
 }
 
@@ -52,7 +53,7 @@ interface FatMockViewProps {
 }
 
 type MockSubView = 'slot_paper' | 'forensics' | 'mcq' | 'weak_topics';
-type PaperSetId = 'd1' | 'a1' | 'a2' | 'model' | 'predicted';
+type PaperSetId = 'd1' | 'a1' | 'a2' | 'predicted';
 type ModuleFilter = 'all' | 'm1' | 'm2' | 'm3' | 'm4' | 'm5';
 type PartFilter = 'all' | 'Part A (Short)' | 'Part B (Analytical)';
 type SlotFilter = 'ALL' | SlotId;
@@ -120,6 +121,16 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
       setPartFilter('all');
       setMissedOnly(false);
       setCurrentIdx(0);
+    } else if (presetRequest.subView === 'slot_paper' && presetRequest.paperSet) {
+      setSlotPaperModule('all');
+      setActivePaperSet(presetRequest.paperSet);
+      if (presetRequest.qRef) {
+        const anchor = normalizeQAnchor(presetRequest.qRef.split('/')[0]);
+        window.requestAnimationFrame(() => {
+          const el = document.getElementById(`slot-paper-${anchor}`);
+          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
     }
   }, [presetRequest]);
 
@@ -200,8 +211,6 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
       ? A1_TA1_PAPER
       : activePaperSet === 'a2'
       ? A2_TA2_PAPER
-      : activePaperSet === 'model'
-      ? OFFICIAL_MODEL_PAPER
       : GENERATED_SLOT_PAPER;
 
   const isDefaultOpenPaper =
@@ -296,8 +305,6 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
         ? A1_TA1_PAPER
         : targetSet === 'a2'
         ? A2_TA2_PAPER
-        : targetSet === 'model'
-        ? OFFICIAL_MODEL_PAPER
         : GENERATED_SLOT_PAPER;
     const matchedQ = targetPaper.find((q) => normalizeQAnchor(q.qNo) === anchor);
     setSlotPaperModule('all');
@@ -319,8 +326,6 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
       ? 'VIT Vellore FAT Slot Paper — A1+TA1 (Q1–Q10 Exact Order & Worked Solutions)'
       : activePaperSet === 'a2'
       ? 'VIT Vellore FAT Slot Paper — A2+TA2 (Q1–Q10 Exact Order & Worked Solutions)'
-      : activePaperSet === 'model'
-      ? 'Official Fall 2026-27 Model Question Paper (Class No. CH2026270101832)'
       : 'Generated Parallel FAT Set (10 × 10M Practice Paper)';
 
   const paperMetaLine =
@@ -337,7 +342,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
             FAT Slot Paper Simulator &amp; Forensics
           </h1>
           <p className="text-xs font-mono text-[#6E695D] tabular-nums">
-            VIT BACSE202 END SEMESTER FAT · VIT CHENNAI D1+TD1 (7×10M + 2×15M), VIT VELLORE A1/A2, MODEL QP &amp; PREDICTED PAPER
+            VIT BACSE202 END SEMESTER FAT · VIT CHENNAI D1+TD1 (7×10M + 2×15M), VIT VELLORE A1+TA1, A2+TA2 &amp; PRACTICE PAPER
           </p>
         </div>
 
@@ -387,20 +392,6 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
           <button
             type="button"
             onClick={() => {
-              setActivePaperSet('model');
-              setSubView('slot_paper');
-            }}
-            className={`px-3 py-2 text-xs font-bold rounded-[4px] border border-[#1C1B18] step-hinge whitespace-nowrap shrink-0 ${
-              subView === 'slot_paper' && activePaperSet === 'model'
-                ? 'bg-[#E5B82E] text-[#1C1B18]'
-                : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
-            }`}
-          >
-            Official Model QP (100M)
-          </button>
-          <button
-            type="button"
-            onClick={() => {
               setActivePaperSet('predicted');
               setSubView('slot_paper');
             }}
@@ -410,7 +401,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                 : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
             }`}
           >
-            Predicted 100M Paper
+            Practice 100M Paper
           </button>
           <button
             type="button"
@@ -421,7 +412,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                 : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
             }`}
           >
-            D1, A1, A2 &amp; Model Forensics
+            D1, A1 &amp; A2 Forensics
           </button>
           <button
             type="button"
@@ -882,16 +873,16 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
           <div className="bg-[#FAF7F0] border border-[#1C1B18] rounded-[4px] p-5 sm:p-6 space-y-4">
             <div className="space-y-1">
               <h2 className="text-lg sm:text-xl font-extrabold text-[#1C1B18]">
-                Source Investigation: VIT Chennai D1+TD1, VIT Vellore A1/A2 &amp; Official Model QP
+                Source Investigation: VIT Chennai D1+TD1 &amp; VIT Vellore A1/A2 Slot Papers
               </h2>
               <p className="prose-manual">
-                Every question across VIT Chennai’s real D1+TD1 FAT paper (Section I 7×10M + Section II 2×15M), VIT Vellore’s A1+TA1 &amp; A2+TA2 papers, and the Official Fall 2026-27 Model QP mapped to its exact CO, Bloom’s level, syllabus topic, lecture slides, and textbook chapter.
+                Every question across VIT Chennai’s real D1+TD1 FAT paper (Section I 7×10M + Section II 2×15M) and VIT Vellore’s A1+TA1 &amp; A2+TA2 papers mapped to its exact CO, Bloom’s level, syllabus topic, lecture slides, and textbook chapter.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-1.5">
-                {(['ALL', 'D1+TD1', 'MODEL_QP', 'A1+TA1', 'A2+TA2'] as SlotFilter[]).map((slot) => (
+                {(['ALL', 'D1+TD1', 'A1+TA1', 'A2+TA2'] as SlotFilter[]).map((slot) => (
                   <button
                     key={slot}
                     type="button"
@@ -903,11 +894,9 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                     }`}
                   >
                     {slot === 'ALL'
-                      ? `All 4 Papers (${SLOT_PAPER_FORENSICS.length} Qs)`
+                      ? `All 3 Papers (${SLOT_PAPER_FORENSICS.length} Qs)`
                       : slot === 'D1+TD1'
                       ? 'VIT Chennai D1+TD1 (9 Qs)'
-                      : slot === 'MODEL_QP'
-                      ? 'Official Model QP (10 Qs)'
                       : `Vellore ${slot} (10 Qs)`}
                   </button>
                 ))}
@@ -969,9 +958,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                             ? 'd1'
                             : row.slot === 'A1+TA1'
                             ? 'a1'
-                            : row.slot === 'A2+TA2'
-                            ? 'a2'
-                            : 'model',
+                            : 'a2',
                           row.qNo
                         )
                       }
