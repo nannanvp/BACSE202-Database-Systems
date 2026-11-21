@@ -29,6 +29,7 @@ import { TOPIC_NOTES } from '../data/topicNotes';
 import {
   A1_TA1_PAPER,
   A2_TA2_PAPER,
+  D1_TD1_PAPER,
   GENERATED_SLOT_PAPER,
   OFFICIAL_MODEL_PAPER,
   SLOT_PAPER_FORENSICS,
@@ -171,13 +172,16 @@ test('Every BACSE202 syllabus topic across Modules 1-5 has complete study notes'
   }
 });
 
-test('Slot paper forensics cover all 3 official papers (A1+TA1, A2+TA2, MODEL_QP = 100M each) and both 100M papers match 10x10=100M blueprint', () => {
+test('Slot paper forensics cover all 4 official papers (D1+TD1, A1+TA1, A2+TA2, MODEL_QP = 100M each) and slot blueprints match 100M total', () => {
+  const d1Items = SLOT_PAPER_FORENSICS.filter((i) => i.slot === 'D1+TD1');
   const a1Items = SLOT_PAPER_FORENSICS.filter((i) => i.slot === 'A1+TA1');
   const a2Items = SLOT_PAPER_FORENSICS.filter((i) => i.slot === 'A2+TA2');
   const modelItems = SLOT_PAPER_FORENSICS.filter((i) => i.slot === 'MODEL_QP');
+  assert.equal(d1Items.length, 9);
   assert.equal(a1Items.length, 10);
   assert.equal(a2Items.length, 10);
   assert.equal(modelItems.length, 10);
+  assert.equal(d1Items.reduce((s, i) => s + i.marks, 0), 100);
   assert.equal(a1Items.reduce((s, i) => s + i.marks, 0), 100);
   assert.equal(a2Items.reduce((s, i) => s + i.marks, 0), 100);
   assert.equal(modelItems.reduce((s, i) => s + i.marks, 0), 100);
@@ -669,6 +673,79 @@ test('A1_TA1_PAPER, A2_TA2_PAPER, OFFICIAL_MODEL_PAPER, and GENERATED_SLOT_PAPER
       }
     });
   }
+
+  // Verify VIT Chennai D1+TD1 paper (9 questions: Section I 7x10M + Section II 2x15M = 100M)
+  assert.equal(D1_TD1_PAPER.length, 9, 'D1_TD1_PAPER must have 9 questions (Q1–Q7 10M + Q8–Q9 15M)');
+  assert.equal(
+    D1_TD1_PAPER.reduce((sum, q) => sum + q.marks, 0),
+    100,
+    'D1_TD1_PAPER must total 100 marks'
+  );
+  D1_TD1_PAPER.forEach((q, idx) => {
+    assert.match(q.qNo, new RegExp(`^Q${idx + 1}(?:\\s|$)`), `D1_TD1_PAPER must be ordered Q1..Q9 (got ${q.qNo})`);
+    assert.equal(q.marks, idx < 7 ? 10 : 15, `D1_TD1_PAPER ${q.qNo} expected ${idx < 7 ? 10 : 15}M`);
+    assert.ok(topicIds.has(q.topicId), `D1_TD1_PAPER ${q.qNo} invalid topicId ${q.topicId}`);
+    assert.ok(q.topicTitle.trim().length > 0, `D1_TD1_PAPER ${q.qNo} missing topicTitle`);
+    const primarySum = q.primary.subQuestions.reduce((s, sq) => s + sq.marks, 0);
+    assert.equal(primarySum, q.marks, `D1_TD1_PAPER ${q.qNo} subQuestions must sum to ${q.marks}`);
+    assert.ok(q.primary.solutionSteps.length >= 1, `D1_TD1_PAPER ${q.qNo} missing solutionSteps`);
+    if (q.primary.diagramId) {
+      assert.ok(
+        registeredIds.has(q.primary.diagramId),
+        `D1_TD1_PAPER ${q.qNo} invalid diagramId ${q.primary.diagramId}`
+      );
+    }
+  });
+});
+
+test('VIT Chennai D1+TD1 mathematical solutions verified (Q3(i) B+ Tree p=4, Q5 schedules, Q6(b) TO vs Thomas, Q8(ii) FD closure & keys)', () => {
+  // Q3(i): B+ Tree order p=4 -> insert [10..70], delete [40, 50, 60]
+  const d1BplusOps = [
+    ...[10, 20, 30, 40, 50, 60, 70].map((key) => ({ type: 'insert' as const, key })),
+    ...[40, 50, 60].map((key) => ({ type: 'delete' as const, key })),
+  ];
+  const d1Bplus = simulateBPlusOperations(d1BplusOps, 4);
+  assert.equal(d1Bplus.steps.length, 10);
+  // After 7 inserts: Root [30, 50], leaves [10,20], [30,40], [50,60,70]
+  assert.deepEqual(d1Bplus.steps[6].tree.keys, [30, 50]);
+  // After Delete 40, 50, 60: Root [30], leaves [10,20], [30,70]
+  assert.deepEqual(d1Bplus.finalTree.keys, [30]);
+  assert.deepEqual(
+    d1Bplus.finalTree.children.map((c) => c.keys),
+    [[10, 20], [30, 70]]
+  );
+
+  // Q5 schedules
+  const q5a = analyzeSchedule(parseSchedule('W1(X) R2(X) W1(X) C2 C1').ops);
+  assert.equal(q5a.isConflictSerializable, false);
+  assert.equal(q5a.isRecoverable, false);
+
+  const q5c = analyzeSchedule(parseSchedule('R2(X) W3(X) C3 W1(Y) C1 R2(Y) W2(Z) C2').ops);
+  assert.equal(q5c.isConflictSerializable, true);
+  assert.deepEqual(q5c.serialOrder, ['T1', 'T2', 'T3']);
+  assert.equal(q5c.isStrict, true);
+
+  const q5d = analyzeSchedule(parseSchedule('R1(X) W2(X) C2 W1(X) C1 R3(X) C3').ops);
+  assert.equal(q5d.isConflictSerializable, false);
+  assert.equal(q5d.isStrict, true);
+
+  // Q6(b): Basic TO vs Thomas Write Rule
+  const q6Ops = parseSchedule('R1(X) W3(X) W2(X) R2(Y) W1(Y) R3(Z)').ops;
+  const q6Basic = simulateTimestampOrdering(q6Ops, { T1: 5, T2: 15, T3: 25 }, 'basic');
+  assert.deepEqual(q6Basic.abortedTxs, ['T2']);
+  assert.equal(q6Basic.ignoredWrites, 0);
+
+  const q6Thomas = simulateTimestampOrdering(q6Ops, { T1: 5, T2: 15, T3: 25 }, 'thomas');
+  assert.equal(q6Thomas.ignoredWrites, 1);
+  assert.equal(q6Thomas.steps[2].status, 'ignored');
+  assert.deepEqual(q6Thomas.abortedTxs, ['T1']);
+  assert.equal(q6Thomas.steps[4].status, 'aborted');
+
+  // Q8(ii): R(P,Q,R,S,T) F={P->Q, Q->R, PR->S, S->T, T->Q}
+  const attrs = parseAttributes('P, Q, R, S, T');
+  const fds = parseFDs('P -> Q; Q -> R; PR -> S; S -> T; T -> Q', attrs).fds;
+  assert.deepEqual(computeClosure(['P', 'R'], fds).closure, ['P', 'Q', 'R', 'S', 'T']);
+  assert.deepEqual(findCandidateKeys(attrs, fds), [['P']]);
 });
 
 test('Timestamp Ordering simulator distinguishes Basic TO abort vs Thomas Write Rule obsolete-write ignore', () => {

@@ -16,6 +16,7 @@ import { FAT_QUESTIONS, MODULES } from '../data/bacse202Data';
 import {
   A1_TA1_PAPER,
   A2_TA2_PAPER,
+  D1_TD1_PAPER,
   GENERATED_SLOT_PAPER,
   GeneratedSlotOption,
   OFFICIAL_MODEL_PAPER,
@@ -51,7 +52,7 @@ interface FatMockViewProps {
 }
 
 type MockSubView = 'slot_paper' | 'forensics' | 'mcq' | 'weak_topics';
-type PaperSetId = 'a1' | 'a2' | 'model' | 'predicted';
+type PaperSetId = 'd1' | 'a1' | 'a2' | 'model' | 'predicted';
 type ModuleFilter = 'all' | 'm1' | 'm2' | 'm3' | 'm4' | 'm5';
 type PartFilter = 'all' | 'Part A (Short)' | 'Part B (Analytical)';
 type SlotFilter = 'ALL' | SlotId;
@@ -89,7 +90,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
   const [subView, setSubView] = useState<MockSubView>('slot_paper');
 
   // --- Slot Paper State ---
-  const [activePaperSet, setActivePaperSet] = useState<PaperSetId>('a1');
+  const [activePaperSet, setActivePaperSet] = useState<PaperSetId>('d1');
   const [orChoiceMap, setOrChoiceMap] = useState<Record<string, 'a' | 'b'>>({});
   const [expandedSolutions, setExpandedSolutions] = useState<Record<string, boolean>>({});
   const [slotPaperModule, setSlotPaperModule] = useState<ModuleFilter>('all');
@@ -193,7 +194,9 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
   };
 
   const basePaper =
-    activePaperSet === 'a1'
+    activePaperSet === 'd1'
+      ? D1_TD1_PAPER
+      : activePaperSet === 'a1'
       ? A1_TA1_PAPER
       : activePaperSet === 'a2'
       ? A2_TA2_PAPER
@@ -201,7 +204,8 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
       ? OFFICIAL_MODEL_PAPER
       : GENERATED_SLOT_PAPER;
 
-  const isDefaultOpenPaper = activePaperSet === 'a1' || activePaperSet === 'a2';
+  const isDefaultOpenPaper =
+    activePaperSet === 'd1' || activePaperSet === 'a1' || activePaperSet === 'a2';
 
   const filteredSlotPaper = useMemo(() => {
     if (slotPaperModule === 'all') return basePaper;
@@ -286,7 +290,9 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
   const jumpToPaperQuestion = (targetSet: PaperSetId, qRef: string) => {
     const anchor = normalizeQAnchor(qRef.split('/')[0]);
     const targetPaper =
-      targetSet === 'a1'
+      targetSet === 'd1'
+        ? D1_TD1_PAPER
+        : targetSet === 'a1'
         ? A1_TA1_PAPER
         : targetSet === 'a2'
         ? A2_TA2_PAPER
@@ -307,13 +313,20 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
   };
 
   const paperHeading =
-    activePaperSet === 'a1'
-      ? 'November 2026 FAT Slot Paper — A1+TA1 (Q1–Q10 Exact Order & Worked Solutions)'
+    activePaperSet === 'd1'
+      ? 'VIT Chennai FAT Slot Paper — D1+TD1 (Section I: 7×10M + Section II: 2×15M = 100M)'
+      : activePaperSet === 'a1'
+      ? 'VIT Vellore FAT Slot Paper — A1+TA1 (Q1–Q10 Exact Order & Worked Solutions)'
       : activePaperSet === 'a2'
-      ? 'November 2026 FAT Slot Paper — A2+TA2 (Q1–Q10 Exact Order & Worked Solutions)'
+      ? 'VIT Vellore FAT Slot Paper — A2+TA2 (Q1–Q10 Exact Order & Worked Solutions)'
       : activePaperSet === 'model'
       ? 'Official Fall 2026-27 Model Question Paper (Class No. CH2026270101832)'
-      : 'Generated Parallel FAT Set (Built Identically to Nov 2026 A1+TA1 & A2+TA2)';
+      : 'Generated Parallel FAT Set (10 × 10M Practice Paper)';
+
+  const paperMetaLine =
+    activePaperSet === 'd1'
+      ? 'VIT CHENNAI · CLASS NBR: CH2026270101726 · BACSE202 DATABASE SYSTEMS · SECTION I (7×10M) + SECTION II (2×15M) = 100 MARKS · 3 HOURS'
+      : 'COURSE: BACSE202 — DATABASE SYSTEMS · TIME: 3 HOURS · MAX. MARKS: 100 (10 × 10M)';
 
   return (
     <div className="space-y-6">
@@ -324,11 +337,25 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
             FAT Slot Paper Simulator &amp; Forensics
           </h1>
           <p className="text-xs font-mono text-[#6E695D] tabular-nums">
-            VIT BACSE202 END SEMESTER FAT · A1+TA1, A2+TA2, OFFICIAL MODEL QP &amp; PREDICTED PAPER (10 × 10 = 100 MARKS)
+            VIT BACSE202 END SEMESTER FAT · VIT CHENNAI D1+TD1 (7×10M + 2×15M), VIT VELLORE A1/A2, MODEL QP &amp; PREDICTED PAPER
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 self-start lg:self-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setActivePaperSet('d1');
+              setSubView('slot_paper');
+            }}
+            className={`px-3 py-2 text-xs font-bold rounded-[4px] border border-[#1C1B18] step-hinge whitespace-nowrap shrink-0 ${
+              subView === 'slot_paper' && activePaperSet === 'd1'
+                ? 'bg-[#E5B82E] text-[#1C1B18]'
+                : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
+            }`}
+          >
+            VIT Chennai D1+TD1 (100M)
+          </button>
           <button
             type="button"
             onClick={() => {
@@ -341,7 +368,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                 : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
             }`}
           >
-            A1+TA1 FAT Paper (100M)
+            Vellore A1+TA1 (100M)
           </button>
           <button
             type="button"
@@ -355,7 +382,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                 : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
             }`}
           >
-            A2+TA2 FAT Paper (100M)
+            Vellore A2+TA2 (100M)
           </button>
           <button
             type="button"
@@ -394,7 +421,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                 : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
             }`}
           >
-            A1, A2 &amp; Model Forensics
+            D1, A1, A2 &amp; Model Forensics
           </button>
           <button
             type="button"
@@ -434,7 +461,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                   {paperHeading}
                 </h2>
                 <div className="text-xs font-mono text-[#6E695D]">
-                  COURSE: BACSE202 — DATABASE SYSTEMS · TIME: 3 HOURS · MAX. MARKS: 100
+                  {paperMetaLine}
                 </div>
               </div>
 
@@ -552,7 +579,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                         : 'bg-[#FAF7F0] text-[#1C1B18] hover:bg-[#EAE4D7]'
                     }`}
                   >
-                    {mod === 'all' ? 'All 10 Questions (100M)' : `Module ${mod.slice(1)}`}
+                    {mod === 'all' ? `All ${basePaper.length} Questions (100M)` : `Module ${mod.slice(1)}`}
                   </button>
                 ))}
               </div>
@@ -561,7 +588,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                 onClick={() => setSubView('forensics')}
                 className="text-xs font-bold text-[#1C1B18] underline underline-offset-4"
               >
-                Inspect A1+TA1 &amp; A2+TA2 Question Sources →
+                Inspect D1+TD1, A1+TA1 &amp; A2+TA2 Sources →
               </button>
             </div>
           </div>
@@ -609,6 +636,14 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                         <span className="font-bold text-[#1C1B18] bg-[#E5B82E] px-1.5 py-0.5 rounded-[2px]">
                           {item.qNo}
                         </span>
+                        {item.section && (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span className="font-bold text-[#FAF7F0] bg-[#1C1B18] px-1.5 py-0.5 rounded-[2px]">
+                              {item.section}
+                            </span>
+                          </>
+                        )}
                         <span aria-hidden="true">·</span>
                         <span className="font-bold text-[#1C1B18]">{item.marks}M</span>
                         <span aria-hidden="true">·</span>
@@ -677,6 +712,22 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                     <pre className="font-mono text-xs bg-[#26231E] text-[#FAF7F0] border border-[#1C1B18] p-4 rounded-[4px] overflow-x-auto whitespace-pre-wrap leading-relaxed">
                       {activeOpt.schemaOrData}
                     </pre>
+                  )}
+
+                  {activeOpt.referenceImageUrl && (
+                    <figure className="bg-[#F4EFE4] border border-[#1C1B18] rounded-[4px] p-3 space-y-2">
+                      <img
+                        src={activeOpt.referenceImageUrl}
+                        alt={activeOpt.referenceImageCaption ?? `${item.qNo} reference diagram`}
+                        referrerPolicy="no-referrer"
+                        className="w-full max-w-2xl mx-auto rounded-[2px] border border-[#1C1B18]/40 bg-white"
+                      />
+                      {activeOpt.referenceImageCaption && (
+                        <figcaption className="text-[11px] font-mono text-[#6E695D] text-center">
+                          {activeOpt.referenceImageCaption}
+                        </figcaption>
+                      )}
+                    </figure>
                   )}
 
                   {/* Sub-questions + Inline Rubric Self-Grader */}
@@ -778,7 +829,7 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                           </span>
                           {qEarnedMarks > 0 && (
                             <span className="px-2 py-0.5 text-[11px] font-mono font-bold bg-[#4F8A3D] text-[#FAF7F0] rounded-[2px] border border-[#1C1B18] tabular-nums">
-                              Graded: {qEarnedMarks} / 10M
+                              Graded: {qEarnedMarks} / {item.marks}M
                             </span>
                           )}
                         </div>
@@ -831,16 +882,16 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
           <div className="bg-[#FAF7F0] border border-[#1C1B18] rounded-[4px] p-5 sm:p-6 space-y-4">
             <div className="space-y-1">
               <h2 className="text-lg sm:text-xl font-extrabold text-[#1C1B18]">
-                Source Investigation: Official Model QP &amp; November 2026 Slot Papers (A1+TA1 &amp; A2+TA2)
+                Source Investigation: VIT Chennai D1+TD1, VIT Vellore A1/A2 &amp; Official Model QP
               </h2>
               <p className="prose-manual">
-                Every question across the Official Fall 2026-27 Model Question Paper and both real VIT Chennai FAT slot papers mapped to its exact Course Outcome (CO), Bloom’s Taxonomy Level (BL), syllabus topic, Prof. Swaminathan’s PPT slides, and textbook chapter.
+                Every question across VIT Chennai’s real D1+TD1 FAT paper (Section I 7×10M + Section II 2×15M), VIT Vellore’s A1+TA1 &amp; A2+TA2 papers, and the Official Fall 2026-27 Model QP mapped to its exact CO, Bloom’s level, syllabus topic, lecture slides, and textbook chapter.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-1.5">
-                {(['ALL', 'MODEL_QP', 'A1+TA1', 'A2+TA2'] as SlotFilter[]).map((slot) => (
+                {(['ALL', 'D1+TD1', 'MODEL_QP', 'A1+TA1', 'A2+TA2'] as SlotFilter[]).map((slot) => (
                   <button
                     key={slot}
                     type="button"
@@ -852,10 +903,12 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                     }`}
                   >
                     {slot === 'ALL'
-                      ? 'All 3 Papers (30 Qs)'
+                      ? `All 4 Papers (${SLOT_PAPER_FORENSICS.length} Qs)`
+                      : slot === 'D1+TD1'
+                      ? 'VIT Chennai D1+TD1 (9 Qs)'
                       : slot === 'MODEL_QP'
                       ? 'Official Model QP (10 Qs)'
-                      : `Slot ${slot} (10 Qs)`}
+                      : `Vellore ${slot} (10 Qs)`}
                   </button>
                 ))}
               </div>
@@ -912,7 +965,13 @@ export const FatMockView: React.FC<FatMockViewProps> = ({
                       type="button"
                       onClick={() =>
                         jumpToPaperQuestion(
-                          row.slot === 'A1+TA1' ? 'a1' : row.slot === 'A2+TA2' ? 'a2' : 'model',
+                          row.slot === 'D1+TD1'
+                            ? 'd1'
+                            : row.slot === 'A1+TA1'
+                            ? 'a1'
+                            : row.slot === 'A2+TA2'
+                            ? 'a2'
+                            : 'model',
                           row.qNo
                         )
                       }

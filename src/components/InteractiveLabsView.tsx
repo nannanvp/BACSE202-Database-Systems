@@ -1248,6 +1248,17 @@ const BPLUS_PRESETS: BPlusPreset[] = [
     note: 'Clean 7-key order p=3 insert sequence showing leaf splits & root split.',
   },
   {
+    id: 'd1_q3i',
+    label: 'VIT Chennai D1+TD1 Q3(i) (p = 4)',
+    order: 4,
+    ops: [
+      ...[10, 20, 30, 40, 50, 60, 70].map((key) => ({ type: 'insert' as const, key })),
+      ...[40, 50, 60].map((key) => ({ type: 'delete' as const, key })),
+    ],
+    searchKey: '30',
+    note: 'VIT Chennai D1+TD1 Q3(i): Order 4 inserts [10..70] then Delete 40 (right borrow), 50 (leaf merge), 60 (left borrow).',
+  },
+  {
     id: 'model_q6',
     label: 'Model QP Q6(a)/(b) (p = 4)',
     order: 4,

@@ -1,6 +1,6 @@
 import type { DiagramId } from './noteTypes';
 
-export type SlotId = 'A1+TA1' | 'A2+TA2' | 'MODEL_QP';
+export type SlotId = 'D1+TD1' | 'A1+TA1' | 'A2+TA2' | 'MODEL_QP';
 
 export interface SlotForensicItem {
   id: string;
@@ -26,11 +26,14 @@ export interface GeneratedSlotOption {
   solutionSteps: string[];
   diagramId?: DiagramId;
   diagramCaption?: string;
+  referenceImageUrl?: string;
+  referenceImageCaption?: string;
 }
 
 export interface GeneratedSlotQuestion {
   qNo: string;
-  marks: 10;
+  marks: 10 | 15;
+  section?: string;
   co: 'CO1' | 'CO2' | 'CO3' | 'CO4' | 'CO5';
   bl: string;
   moduleId: 'm1' | 'm2' | 'm3' | 'm4' | 'm5';
@@ -45,24 +48,161 @@ export interface GeneratedSlotQuestion {
 
 export const SLOT_BLUEPRINT_INSIGHTS = [
   {
-    title: 'Exact 10 × 10 = 100M Structure',
+    title: 'VIT Chennai (D1+TD1) vs. VIT Vellore (A1/A2) Pattern',
     detail:
-      'Both A1+TA1 and A2+TA2 have NO separate 2M Part-A: Part A itself has Q1–Q10 (10 marks each = 100M total, 3 Hours), subdivided into [2+6+2], [4+6], [5+5], or [2+8] parts with internal (OR) choices on heavy numericals.',
+      'VIT Chennai D1+TD1 uses Section I (7 × 10M = 70M) + Section II (2 × 15M = 30M) = 100M with ZERO internal OR choices—every single question Q1–Q9 is compulsory! By contrast, VIT Vellore A1+TA1 & A2+TA2 use 10 × 10M with OR choices on selected numericals.',
   },
   {
-    title: 'Consistent CO1–CO5 Blueprint',
+    title: 'Chennai D1+TD1 High-Yield Weightage (for D2 Prep)',
     detail:
-      'Both slots test: 2× CO1 questions (Module 1 architecture/constraints), 2× CO5 questions (Module 2 EER diagram + FD Normalization), 2× CO2 questions (Module 3 Hashing/B+ Tree/Multilevel Index + Query Tree Optimization), 2× CO3 questions (Module 4 Serializability/2PL/Deadlock/Recovery), and 2× CO4 questions (Module 5 DDBMS/Fragmentation + CAP/NoSQL).',
+      'VIT Chennai heavily rewards applied SQL & Relational Algebra Division/Aggregation (Q2, Q4), B+ Tree Order-4 Insert+Delete + LSM Compaction (Q3, Q4), 6-Class Schedule Analysis & Basic TO vs Thomas Write Rule (Q5, Q6), Full 1NF→5NF Normalization (Q7), ER-to-Relational Mapping + FD Closure/Keys (Q8, 15M), and DDBMS Fragmentation + MapReduce (Q9, 15M).',
   },
   {
-    title: 'Direct Slide-to-Question Lineage',
+    title: 'Direct Slide & Textbook Lineage',
     detail:
-      'Nearly every question adapts an exact example or diagram from Prof. Swaminathan’s PPTs and Elmasri & Navathe (7th Ed.) into a fresh real-world domain (Agriculture ARRMS, Hospital, Retail Banking, Hotel, University Project Evaluation).',
+      'Across both campuses, every question adapts exact patterns from Prof. Swaminathan’s PPTs, Elmasri & Navathe (7th Ed.), and Ramakrishnan & Gehrke (e.g., Ex. 17.2 schedules in D1 Q5) into real-world domains (Railway, EV Charging, Multispecialty Hospital, Hotel ER, 3-Campus University, E-Commerce).',
   },
 ];
 
 export const SLOT_PAPER_FORENSICS: SlotForensicItem[] = [
-  // ================= A1+TA1 (Nov 2026) =================
+  // ================= VIT CHENNAI D1+TD1 (Nov 2026 · Class CH2026270101726) =================
+  {
+    id: 'd1-q1',
+    slot: 'D1+TD1',
+    qNo: 'Q1',
+    co: 'CO1',
+    bl: 'K3',
+    marks: 10,
+    moduleId: 'm1',
+    topicSummary: 'Online Railway Reservation System: (a) [6M] DBMS System Architecture & Component Modules, (b) [4M] Differentiate Actors on the Scene by responsibility.',
+    syllabusSource: 'Module 1 — Database System Environment (m1-t4) & Actors on the Scene (m1-t2)',
+    pptSource: 'Module 1 Concepts & Arch.pptx (Slides 31–44 Actors on the Scene & Slides 86–99 DBMS Component Modules)',
+    textbookSource: 'Elmasri & Navathe 7th Ed., Ch. 1 (Sec. 1.4 Actors) & Ch. 2 (Sec. 2.4, Fig. 2.3 DBMS Architecture)',
+    setterPatternNote: 'VIT Chennai blends two Module 1 topics into a single Railway Reservation scenario (6M architecture + 4M actors), testing K3 domain application instead of rote listing.',
+    pairedPredictedQNo: 'Q1',
+  },
+  {
+    id: 'd1-q2',
+    slot: 'D1+TD1',
+    qNo: 'Q2',
+    co: 'CO1',
+    bl: 'K3',
+    marks: 10,
+    moduleId: 'm3',
+    topicSummary: 'EV Charging Platform (4 tables) — 5 SQL queries [5×2M]: HAVING sum > ₹5,000, AVG > 20, above-average customer total (CTE/nested), correlated city-average price, multi-vehicle COUNT(DISTINCT) + > ₹10,000.',
+    syllabusSource: 'Module 3 — Relational Algebra & SQL Translation (m3-t4) · Tagged CO1/K3 on Chennai QP',
+    pptSource: 'Module 3 SQL & Relational Algebra slides (GROUP BY, HAVING, Correlated Subqueries, Multi-table JOINs)',
+    textbookSource: 'Elmasri & Navathe 7th Ed., Ch. 6 & Ch. 7 (Complex SQL Queries, Nested & Correlated Subqueries)',
+    setterPatternNote: 'Pure hands-on SQL sprint (2M × 5 = 10M). Watch the classic join-fanout trap in part (e): MUST use COUNT(DISTINCT v.VehicleID) when joining VEHICLE with CHARGING_SESSION.',
+    pairedPredictedQNo: 'Q6',
+  },
+  {
+    id: 'd1-q3',
+    slot: 'D1+TD1',
+    qNo: 'Q3',
+    co: 'CO2',
+    bl: 'K2',
+    marks: 10,
+    moduleId: 'm3',
+    topicSummary: '(i) [3+3M] B+ Tree order 4: Insert [10,20,30,40,50,60,70], then Delete [40,50,60]. (ii) [2+2M] Single-level vs Multilevel indexing; Dynamic (B/B+) vs Static (ISAM) multilevel updates.',
+    syllabusSource: 'Module 3 — Single-Level, Multi-Level & B+ Tree Indexing (m3-t3)',
+    pptSource: 'BACSE202-DBS-Module-3_Complete.pptx (Slides 119–162 Multilevel Indexing, ISAM & B+ Tree Insert/Delete)',
+    textbookSource: 'Elmasri & Navathe 7th Ed., Ch. 17 (Sec. 17.1–17.3)',
+    setterPatternNote: 'Order-4 B+ tree sequential insert + delete tests right-borrow (Del 40), leaf-merge (Del 50), and left-borrow (Del 60) in one compact 10-step trace. Paired with 4M indexing theory.',
+    pairedPredictedQNo: 'Q5',
+  },
+  {
+    id: 'd1-q4',
+    slot: 'D1+TD1',
+    qNo: 'Q4',
+    co: 'CO2',
+    bl: 'K4',
+    marks: 10,
+    moduleId: 'm3',
+    topicSummary: '(i) [3+3M] Research DB Relational Algebra / SQL: Division (every project > ₹10L) MINUS low-citation projects (<5); Grouping ≥2 distinct projects & >100 hrs. (ii) [2+2M] LSM Tree L0/L1 compaction merge + 2 write-workload advantages.',
+    syllabusSource: 'Module 3 — Relational Algebra (m3-t4) & Indexing / LSM Trees (m3-t3)',
+    pptSource: 'Module 3 Relational Algebra (Division ÷ & Extended Grouping ℑ) + LSM-Tree Compaction slides',
+    textbookSource: 'Elmasri & Navathe 7th Ed., Ch. 8 (Sec. 8.3 Division & 8.5 Aggregate Functions); Kleppmann / LSM Storage Engines',
+    setterPatternNote: 'High-signal Chennai differentiator: explicitly tests Relational Algebra Division (÷) + Set Difference (-) AND LSM Tree L0->L1 duplicate-resolution compaction (L0 wins!).',
+    pairedPredictedQNo: 'Q6',
+  },
+  {
+    id: 'd1-q5',
+    slot: 'D1+TD1',
+    qNo: 'Q5',
+    co: 'CO3',
+    bl: 'K4',
+    marks: 10,
+    moduleId: 'm4',
+    topicSummary: 'Classify 4 schedules (a–d) [4×2.5M] across all 6 classes: Serializable, Conflict-Serializable, View-Serializable, Recoverable, Avoids-Cascading-Aborts (ACA), and Strict.',
+    syllabusSource: 'Module 4 — Concurrency Problems & Schedule Classification (m4-t2, m4-t3)',
+    pptSource: 'Module - 4 Transaction Processing and Recovery.pptx (Slides 37–54 Serializability & Recoverability Hierarchy)',
+    textbookSource: 'Ramakrishnan & Gehrke 3rd Ed., Ch. 17 (Exercise 17.2 exact schedules!) & Elmasri Ch. 20 (Sec. 20.4–20.5)',
+    setterPatternNote: 'Directly adapted from Ramakrishnan & Gehrke Ex. 17.2! Tests subtle edge cases: intermediate write dirty-read (a), aborted dirty-read non-recoverability (b), all-6 strict serializable (c), and strict-yet-unserializable (d).',
+    pairedPredictedQNo: 'Q7',
+  },
+  {
+    id: 'd1-q6',
+    slot: 'D1+TD1',
+    qNo: 'Q6',
+    co: 'CO4',
+    bl: 'K4',
+    marks: 10,
+    moduleId: 'm4',
+    topicSummary: '(a) [2+2+1M] Early unlock cascading abort, Strict 2PL fix, Lock-Upgrade (S→X) deadlock & Update Lock prevention. (b) [2+2+1M] Basic TO vs Thomas Write Rule on r1(X);w3(X);w2(X);r2(Y);w1(Y);r3(Z).',
+    syllabusSource: 'Module 4 — Two-Phase Locking (m4-t4) & Timestamp Ordering / Thomas Write Rule (m4-t5)',
+    pptSource: 'Module - 4 Concurrency Control Techniques.pptx (Strict 2PL, Lock Upgrade, Basic TO & Thomas Write Rule)',
+    textbookSource: 'Silberschatz 7th Ed., Ch. 18 (Sec. 18.1–18.2, Thomas Write Rule) & Elmasri Ch. 21 (Sec. 21.1–21.2)',
+    setterPatternNote: 'Note: Printed CO4 on paper, tests Module 4 Concurrency Control. Part (b) cleverly contrasts Basic TO (aborts T2 on w2(X)) against Thomas Write Rule (ignores w2(X), allowing r2(Y) which then forces T1 to abort on w1(Y)!).',
+    pairedPredictedQNo: 'Q8',
+  },
+  {
+    id: 'd1-q7',
+    slot: 'D1+TD1',
+    qNo: 'Q7',
+    co: 'CO2',
+    bl: 'K4',
+    marks: 10,
+    moduleId: 'm2',
+    topicSummary: 'Multispecialty Hospital consolidated table: (a) [2M] Anomalies & 0NF/1NF atomicity, (b) [2M] FDs, CKs & 2NF→3NF→BCNF, (c) [3M] MVDs & 4NF, (d) [3M] 3-way Join Dependency & 5NF (PJNF).',
+    syllabusSource: 'Module 2 — Normalization 1NF–BCNF (m2-t5) & 4NF MVD / 5NF JD (m2-t6)',
+    pptSource: 'Module-2-Consolidated.ppt (Slides 163–225: Full 1NF through 4NF MVD & 5NF Cyclic Join Dependency)',
+    textbookSource: 'Elmasri & Navathe 7th Ed., Ch. 14 & Ch. 15 (Sec. 15.6 Multivalued Dependencies & Sec. 15.7 Join Dependencies / 5NF)',
+    setterPatternNote: 'Full-ladder 1NF→2NF→3NF→BCNF→4NF→5NF question in one table! Major Chennai signature (Vellore stopped at BCNF; Chennai tests 4NF MVD & 5NF 3-way JD for 6 out of 10 marks).',
+    pairedPredictedQNo: 'Q4',
+  },
+  {
+    id: 'd1-q8',
+    slot: 'D1+TD1',
+    qNo: 'Q8 (Section II)',
+    co: 'CO1',
+    bl: 'K4',
+    marks: 15,
+    moduleId: 'm2',
+    topicSummary: 'Section II (15M): (i) [8M] Map Hotel ER diagram (Guest, Invoice, Payment, Comments & Complaints, Facilities, Reservation, Room) to Relational Schema + all constraints. (ii) [4+3M] R(P,Q,R,S,T) closure (PR)+ & Candidate Keys ({P} only).',
+    syllabusSource: 'Module 2 — 7-Step ER-to-Relational Mapping (m2-t3) & Functional Dependencies / Closures (m2-t4)',
+    pptSource: 'Module 2 ER-to-Relational Mapping (7-Step Algorithm) & Attribute Closure / Candidate Key Derivation slides',
+    textbookSource: 'Elmasri & Navathe 7th Ed., Ch. 9 (Sec. 9.1 ER-to-Relational Mapping) & Ch. 14 (Sec. 14.2 Closure Algorithm)',
+    setterPatternNote: 'First 15M Section-II heavyweight! Tests composite Name flattening, 1:1 UNIQUE FK (Invoice–Payment), total-participation NOT NULL FK (Comments–Guest), M:M junction table (RESERVATION_ROOM), and candidate key minimality ({P} vs superkey PR).',
+    pairedPredictedQNo: 'Q3',
+  },
+  {
+    id: 'd1-q9',
+    slot: 'D1+TD1',
+    qNo: 'Q9 (Section II)',
+    co: 'CO5',
+    bl: 'K3',
+    marks: 15,
+    moduleId: 'm5',
+    topicSummary: 'Section II (15M): (i) [8M] 3-Campus University (Chennai, Vellore, Bengaluru) STUDENT Distributed DB design — Horizontal Fragmentation, Allocation & Replication for performance + availability. (ii) [7M] MapReduce average product rating (Map, Combiner, Shuffle, Reduce).',
+    syllabusSource: 'Module 5 — Data Fragmentation & Replication (m5-t2) & MapReduce Distributed Processing (m5-t5)',
+    pptSource: 'BACSE202-DBS-Module-5.ppt (Horizontal Fragmentation, Allocation/Replication) & Module 5 MapReduce slides',
+    textbookSource: 'Elmasri & Navathe 7th Ed., Ch. 23 (Sec. 23.2 Fragmentation/Replication) & Ch. 25 (Sec. 25.2 MapReduce)',
+    setterPatternNote: 'Second 15M Section-II heavyweight! Pairs DDBMS Horizontal Fragmentation + Replication (8M) with a full MapReduce pseudocode + Combiner optimization problem (7M — classic trap: Combiner must pass (sum, count), NOT pre-averaged floats!).',
+    pairedPredictedQNo: 'Q9 / Q10',
+  },
+
+  // ================= VIT VELLORE A1+TA1 (Nov 2026) =================
   {
     id: 'a1-q1',
     slot: 'A1+TA1',
@@ -2115,5 +2255,423 @@ export const A2_TA2_PAPER: GeneratedSlotQuestion[] = [
     },
   },
 ];
+
+// ============================================================================
+// VIT CHENNAI — NOVEMBER 2026 REAL FAT SLOT PAPER: D1+TD1 (Q1–Q9 = 100M)
+// Section I: 7 × 10 Marks = 70M (Q1–Q7) · Section II: 2 × 15 Marks = 30M (Q8–Q9)
+// Class Nbr: CH2026270101726 · Course: BACSE202 Database Systems · Time: 3 Hours
+// ============================================================================
+
+export const D1_TD1_PAPER: GeneratedSlotQuestion[] = [
+  {
+    qNo: 'Q1',
+    marks: 10,
+    section: 'Section I (7 × 10M)',
+    co: 'CO1',
+    bl: 'K3',
+    moduleId: 'm1',
+    topicId: 'm1-t4',
+    topicTitle: 'Database System Environment & Data Models (with m1-t2 Actors)',
+    patternOrigin: 'VIT Chennai FAT · Slot D1+TD1 (CH2026270101726) · Section I · Q01 [6M + 4M = 10M, CO1/K3]',
+    primary: {
+      label: 'Online Railway Reservation System — DBMS Component Architecture & Actors on the Scene',
+      promptIntro:
+        'An online railway reservation system maintains details of passengers, trains, stations, seat availability, and ticket bookings. Passengers can view train schedules, check seat availability for different dates, and access their booking details. The railway authority manages train operations and maintains the database.',
+      subQuestions: [
+        {
+          part: 'a',
+          marks: 6,
+          text: 'Apply and show database system architecture with DBMS Component Modules to develop the above system with suitable explanation.',
+        },
+        {
+          part: 'b',
+          marks: 4,
+          text: 'Analyze the scenario and differentiate the actors on the scene in the database system based on their responsibilities.',
+        },
+      ],
+      diagramId: 'm1-dbms-components',
+      diagramCaption: 'DBMS Component Modules Architecture applied to the Online Railway Reservation System.',
+      solutionSteps: [
+        'Part (a) — DBMS Component Modules Applied to Online Railway Reservation [6M]: Draw the 4-layer architecture (Users -> Query/DML Compilers -> Runtime/Transaction/Storage Managers -> Stored DB + System Catalog) and map every component to the railway domain:\n  1. **DDL Compiler & Privileged Commands (Railway DBA):** Railway authority defines schemas (`PASSENGER`, `TRAIN`, `STATION`, `SEAT_AVAILABILITY`, `BOOKING`), primary/foreign keys, and access privileges. The DDL Compiler stores schema metadata in the **System Catalog (Data Dictionary)**.\n  2. **Interactive Query Compiler & Query Optimizer:** Used by railway operations managers running ad-hoc SQL (e.g., route occupancy or wait-list analytics). Validates tables against the System Catalog, parses SQL into Relational Algebra, and picks the minimum-I/O execution plan using catalog statistics.\n  3. **DML Precompiler, Host Language Compiler & Canned Transactions:** Web/mobile booking forms (Check Seat Availability, Book Ticket, Cancel PNR) are written by Application Programmers as parameterized embedded SQL, precompiled into **Compiled (Canned) Transactions** so millions of passengers invoke them rapidly without writing SQL.\n  4. **Runtime Database Processor & Concurrency Control / Recovery Manager:** Executes compiled bookings and queries. **Concurrency Control** (Strict 2PL / row-level locks on seat inventory) prevents two passengers from booking the exact same berth simultaneously; **Backup & Recovery Manager** (Write-Ahead Logging `UNDO/REDO`) guarantees no paid ticket is lost on server crash.\n  5. **Stored Data Manager, Buffer Manager & File Manager:** Buffer Manager caches hot train-schedule and seat-availability pages in RAM; File/Disk Manager reads/writes `B+ Tree` index blocks and data files on disk.',
+        'Part (b) — Differentiation of Actors on the Scene in Railway Reservation [4M]:\n| Actor on the Scene | Role in Railway Reservation System | Core Responsibilities |\n|---|---|---|\n| **Database Administrator (DBA)** | Railway IT Authority / Central DB Ops | Authorizes access (`GRANT/REVOKE`), coordinates schema changes, monitors peak-hour (Tatkal) performance, manages backups, crash recovery, and physical storage tuning. |\n| **Database Designers** | System Architects (pre-deployment) | Identify entities (`Passenger`, `Train`, `Station`, `Booking`), constraints, normalization, and user views (Passenger View vs. Operations View) before implementation. |\n| **Naive / Parametric End Users** | Passengers & Ticket Counter Clerks | Repeatedly invoke pre-tested **canned transactions** (check schedules, check seat availability by date, book/cancel tickets, view PNR status) via web/app UI. |\n| **Casual End Users** | Railway Zone Managers / Operations Officers | Occasionally access the DB with different ad-hoc queries each time (e.g., festival special-train demand reports, route delay summaries). |\n| **Sophisticated End Users** | Revenue Analysts / Demand Forecasters | Write complex analytical SQL/OLAP queries directly against operational/historical data for dynamic fare pricing and coach allocation. |\n| **System Analysts & Application Programmers** | Reservation Portal Developers | Analysts gather passenger & railway authority requirements; programmers implement, test, and maintain the canned booking/cancellation transactions. |',
+      ],
+    },
+  },
+  {
+    qNo: 'Q2',
+    marks: 10,
+    section: 'Section I (7 × 10M)',
+    co: 'CO1',
+    bl: 'K3',
+    moduleId: 'm3',
+    topicId: 'm3-t4',
+    topicTitle: 'Relational Algebra & SQL Translation',
+    patternOrigin: 'VIT Chennai FAT · Slot D1+TD1 (CH2026270101726) · Section I · Q02 [5 × 2M = 10M, CO1/K3]',
+    primary: {
+      label: 'EV Charging Management Platform — 5 Analytical SQL Queries (GROUP BY, HAVING, CTE & Correlated Subqueries)',
+      promptIntro:
+        'An EV charging management platform maintains the following four tables to manage customers, electric vehicles, charging stations, and charging sessions:',
+      schemaOrData:
+        'CUSTOMER(CustomerID, CustomerName, City, Phone)\nVEHICLE(VehicleID, CustomerID, Model, BatteryCapacity)\nCHARGING_STATION(StationID, StationName, City, PricePerUnit)\nCHARGING_SESSION(SessionID, VehicleID, StationID, SessionDate, UnitsConsumed, Amount)',
+      subQuestions: [
+        {
+          part: 'a',
+          marks: 2,
+          text: 'Write an SQL query to display the name of each customer and their total charging expenditure. Display only customers whose total expenditure exceeds ₹5,000.',
+        },
+        {
+          part: 'b',
+          marks: 2,
+          text: 'Write an SQL query to display the names of charging stations and their average units consumed per charging session. Include only stations with an average consumption greater than 20 units.',
+        },
+        {
+          part: 'c',
+          marks: 2,
+          text: 'Write an SQL query to identify customers who have spent more on charging than the average total charging expenditure of all customers who have used at least one charging session. Display the customer name and total expenditure in descending order.',
+        },
+        {
+          part: 'd',
+          marks: 2,
+          text: 'Write an SQL query to display the names of charging stations whose price per unit is greater than the average price per unit of charging stations in the same city.',
+        },
+        {
+          part: 'e',
+          marks: 2,
+          text: 'Write an SQL query to identify customers who own more than one vehicle and whose total charging expenditure across all their vehicles exceeds ₹10,000. Display the customer name, number of vehicles owned, and total charging expenditure, sorted by total expenditure in descending order.',
+        },
+      ],
+      solutionSteps: [
+        'Part (a) — Customers with Total Charging Expenditure > ₹5,000 [2M]: Join `CUSTOMER -> VEHICLE -> CHARGING_SESSION` and group by `(CustomerID, CustomerName)` (including `CustomerID` prevents merging two customers who share the same name!):\n```sql\nSELECT c.CustomerName, SUM(cs.Amount) AS TotalExpenditure\nFROM CUSTOMER c\nJOIN VEHICLE v ON c.CustomerID = v.CustomerID\nJOIN CHARGING_SESSION cs ON v.VehicleID = cs.VehicleID\nGROUP BY c.CustomerID, c.CustomerName\nHAVING SUM(cs.Amount) > 5000;\n```',
+        'Part (b) — Stations with Average Consumption > 20 Units per Session [2M]:\n```sql\nSELECT s.StationName, AVG(cs.UnitsConsumed) AS AvgUnits\nFROM CHARGING_STATION s\nJOIN CHARGING_SESSION cs ON s.StationID = cs.StationID\nGROUP BY s.StationID, s.StationName\nHAVING AVG(cs.UnitsConsumed) > 20;\n```',
+        'Part (c) — Customers Spending More Than the Average Total Expenditure of Active Customers [2M]: Use a CTE (or derived table) so `AVG(TotalExp)` is computed over per-customer totals (only customers with >= 1 session appear due to `INNER JOIN`):\n```sql\nWITH CustomerTotals AS (\n  SELECT c.CustomerID, c.CustomerName, SUM(cs.Amount) AS TotalExpenditure\n  FROM CUSTOMER c\n  JOIN VEHICLE v ON c.CustomerID = v.CustomerID\n  JOIN CHARGING_SESSION cs ON v.VehicleID = cs.VehicleID\n  GROUP BY c.CustomerID, c.CustomerName\n)\nSELECT CustomerName, TotalExpenditure\nFROM CustomerTotals\nWHERE TotalExpenditure > (SELECT AVG(TotalExpenditure) FROM CustomerTotals)\nORDER BY TotalExpenditure DESC;\n```',
+        'Part (d) — Stations Priced Above Their Own City’s Average PricePerUnit (Correlated Subquery) [2M]:\n```sql\nSELECT s1.StationName\nFROM CHARGING_STATION s1\nWHERE s1.PricePerUnit > (\n  SELECT AVG(s2.PricePerUnit)\n  FROM CHARGING_STATION s2\n  WHERE s2.City = s1.City\n);\n```',
+        'Part (e) — Multi-Vehicle Customers with Total Expenditure > ₹10,000 [2M]: **CRITICAL EXAM TRAP:** Joining `VEHICLE` with `CHARGING_SESSION` duplicates each `VehicleID` across its sessions! Therefore you **MUST** use `COUNT(DISTINCT v.VehicleID)` (and `LEFT JOIN` `CHARGING_SESSION` so owned vehicles with zero sessions are still counted in the vehicle count):\n```sql\nSELECT\n  c.CustomerName,\n  COUNT(DISTINCT v.VehicleID) AS NumVehicles,\n  SUM(cs.Amount) AS TotalExpenditure\nFROM CUSTOMER c\nJOIN VEHICLE v ON c.CustomerID = v.CustomerID\nLEFT JOIN CHARGING_SESSION cs ON v.VehicleID = cs.VehicleID\nGROUP BY c.CustomerID, c.CustomerName\nHAVING COUNT(DISTINCT v.VehicleID) > 1\n   AND SUM(cs.Amount) > 10000\nORDER BY TotalExpenditure DESC;\n```',
+      ],
+    },
+  },
+  {
+    qNo: 'Q3',
+    marks: 10,
+    section: 'Section I (7 × 10M)',
+    co: 'CO2',
+    bl: 'K2',
+    moduleId: 'm3',
+    topicId: 'm3-t3',
+    topicTitle: 'Single-Level, Multi-Level & B+ Tree Indexing',
+    patternOrigin: 'VIT Chennai FAT · Slot D1+TD1 (CH2026270101726) · Section I · Q03 [3M + 3M + 2M + 2M = 10M, CO2/K2]',
+    primary: {
+      label: 'B+ Tree (Order p = 4) Insert/Delete Trace + Single-Level vs. Multilevel & Dynamic vs. Static Indexing',
+      promptIntro:
+        'Part (i) tests B+ tree structural maintenance for order p = 4 (max 4 child pointers / 3 keys per node; min 2 keys per non-root leaf = ⌈(4-1)/2⌉, min 1 key / 2 pointers per non-root internal node). Part (ii) evaluates indexing structures for efficient data retrieval.',
+      schemaOrData:
+        'B+ Tree Order p = 4  (Max keys/node = 3, Min keys/leaf = 2, Min keys/internal = 1)\n(i)(a) Insert keys in sequence: 10, 20, 30, 40, 50, 60, 70\n(i)(b) Delete keys in sequence: 40, 50, 60',
+      subQuestions: [
+        {
+          part: 'i-a',
+          marks: 3,
+          text: 'Consider a B+ tree of order 4. Insert the keys 10, 20, 30, 40, 50, 60, 70 in the given sequence.',
+        },
+        {
+          part: 'i-b',
+          marks: 3,
+          text: 'From the resulting B+ tree, delete the keys 40, 50, 60 in the given sequence, showing borrows, merges, and separator updates.',
+        },
+        {
+          part: 'ii-a',
+          marks: 2,
+          text: 'Differentiate between single-level indexing and multilevel indexing based on their structure and search efficiency.',
+        },
+        {
+          part: 'ii-b',
+          marks: 2,
+          text: 'Explain how dynamic multilevel indexing handles insertions and deletions more efficiently than static multilevel indexing.',
+        },
+      ],
+      solutionSteps: [
+        'Part (i)(a) — Step-by-Step Insertions (Order p = 4, Max 3 Keys/Node) [3M]: *(Try this exact sequence live in Interactive Labs -> B+ Tree Lab -> Preset `VIT Chennai D1+TD1 Q3(i) (p = 4)`!)*\n  1. **Insert `10, 20, 30`:** All fit into root leaf -> **`[10, 20, 30]`**.\n  2. **Insert `40`:** Leaf overflows (`[10, 20, 30, 40]`, 4 > 3). Split into left leaf `[10, 20]` and right leaf `[30, 40]`; **copy up `30`** into a new root:\n     • Root: **`[30]`** -> Leaves: **`[10, 20] -> [30, 40]`** *(Height = 2)*.\n  3. **Insert `50`:** Fits in right leaf -> Root `[30]` -> Leaves: `[10, 20] -> [30, 40, 50]`.\n  4. **Insert `60`:** Right leaf overflows (`[30, 40, 50, 60]`). Split into `[30, 40]` and `[50, 60]`; **copy up `50`** to root:\n     • Root: **`[30, 50]`** -> Leaves: **`[10, 20] -> [30, 40] -> [50, 60]`**.\n  5. **Insert `70`:** Fits in rightmost leaf -> **End of Phase (a):**\n     • **Root:** **`[30, 50]`**\n     • **Linked Leaves:** **`[10, 20] -> [30, 40] -> [50, 60, 70]`**.',
+        'Part (i)(b) — Step-by-Step Deletions (Min Leaf Keys = 2) [3M]:\n  6. **Delete `40` (Borrow from Right Sibling):** Middle leaf `[30, 40]` becomes `[30]` (`1 < 2`, underflow!). Right sibling `[50, 60, 70]` has 3 keys (`> 2`), so **borrow smallest key `50`** into middle leaf -> `[30, 50]`, right leaf becomes `[60, 70]`, and update root separator `50 -> 60`:\n     • Root: **`[30, 60]`** -> Leaves: **`[10, 20] -> [30, 50] -> [60, 70]`**.\n  7. **Delete `50` (Merge with Left Sibling):** Middle leaf `[30, 50]` becomes `[30]` (`1 < 2`, underflow!). Both left sibling `[10, 20]` (2 keys) and right sibling `[60, 70]` (2 keys) are at minimum, so **merge `[30]` into left sibling `[10, 20]`** -> `[10, 20, 30]`, and drop separator `30` from root:\n     • Root: **`[60]`** -> Leaves: **`[10, 20, 30] -> [60, 70]`**.\n  8. **Delete `60` (Borrow from Left Sibling):** Right leaf `[60, 70]` becomes `[70]` (`1 < 2`, underflow!). Left sibling `[10, 20, 30]` has 3 keys (`> 2`), so **borrow largest key `30`** into right leaf -> `[30, 70]`, left leaf becomes `[10, 20]`, and update root separator `60 -> 30`:\n     • **Final Tree after Deletions:** **Root: `[30]`** -> **Leaves: `[10, 20] -> [30, 70]`**.',
+        'Part (ii)(a) — Single-Level vs. Multilevel Indexing [2M]:\n| Criterion | Single-Level Index | Multilevel Index |\n|---|---|---|\n| **Structure** | One flat ordered index file `(key, pointer)` built directly over the data file. | Hierarchical tree of indexes: 1st-level index over data, 2nd-level sparse index over 1st-level blocks, repeated until the top level fits in 1 root block. |\n| **Search Cost** | Binary search over `b_i` index blocks: **`⌈log₂(b_i)⌉ + 1`** block I/Os (reduces search space by factor `2` per I/O). | Tree traversal with fan-out `fo` (`bfr_i`): **`⌈log_{fo}(b_i)⌉ + 1`** block I/Os (reduces search space by factor `fo ≈ 50–200` per I/O — typically 3–4 disk accesses even for millions of rows). |',
+        'Part (ii)(b) — Why Dynamic Multilevel Indexing (B/B+ Trees) Beats Static Multilevel Indexing (ISAM) [2M]:\n  • **Static Multilevel Indexing (ISAM):** Index levels are fixed at load time. Insertions into full leaf pages cannot expand the index tree — they spill into **linear overflow chains**, degrading search from `O(log_{fo} n)` toward `O(n)` and requiring expensive offline **periodic file reorganization**. Deletions leave empty wasted slots.\n  • **Dynamic Multilevel Indexing (B / B+ Trees):** Leaves and internal nodes keep ~50–100% occupancy dynamically. Insertions split full nodes cleanly (`O(log_{fo} n)`) and propagate separator keys upward without overflow chains; deletions **borrow (redistribute)** from siblings or **merge** underflowing nodes, automatically reclaiming space and keeping the tree **strictly height-balanced** at all times.',
+      ],
+    },
+  },
+  {
+    qNo: 'Q4',
+    marks: 10,
+    section: 'Section I (7 × 10M)',
+    co: 'CO2',
+    bl: 'K4',
+    moduleId: 'm3',
+    topicId: 'm3-t4',
+    topicTitle: 'Relational Algebra & SQL Translation (with m3-t3 LSM Trees)',
+    patternOrigin: 'VIT Chennai FAT · Slot D1+TD1 (CH2026270101726) · Section I · Q04 [3M + 3M + 2M + 2M = 10M, CO2/K4]',
+    primary: {
+      label: 'University Research Relational Algebra (Division ÷ & Grouping ℑ) + LSM-Tree Compaction',
+      promptIntro:
+        'Part (i) queries a University Research Management System using Relational Algebra (Division, Set Difference, Grouping/Aggregation). Part (ii) performs an LSM-tree compaction merge between levels L0 and L1.',
+      schemaOrData:
+        '(i) Schema:\nRESEARCHER(ResearcherID, ResearcherName, Department)\nPROJECT(ProjectID, ProjectTitle, Budget)\nPARTICIPATION(ResearcherID, ProjectID, HoursWorked)\nPUBLICATION(PublicationID, ProjectID, Year, CitationCount)\n\n(ii) LSM Tree Sorted Runs (duplicate key -> L0 is newer and retained):\nL0: {10, 20, 30, 40}\nL1: {5, 15, 20, 25, 35, 45}',
+      subQuestions: [
+        {
+          part: 'i-a',
+          marks: 3,
+          text: 'Retrieve the names of researchers who have participated in every project with a budget greater than ₹10,00,000, but have not participated in any project that has at least one publication with a citation count below 5.',
+        },
+        {
+          part: 'i-b',
+          marks: 3,
+          text: 'Retrieve the names of researchers who have participated in at least two distinct projects and have contributed more than 100 hours in total across their projects.',
+        },
+        {
+          part: 'ii-a',
+          marks: 2,
+          text: 'Perform compaction by merging L0 and L1. Write the final sorted sequence after resolving duplicate keys.',
+        },
+        {
+          part: 'ii-b',
+          marks: 2,
+          text: 'State two advantages of using an LSM tree for write-intensive database workloads.',
+        },
+      ],
+      diagramId: 'm3-lsm-architecture',
+      diagramCaption: 'LSM-Tree Write Path (MemTable -> Immutable SSTable L0 -> Sorted Merge Compaction into L1).',
+      solutionSteps: [
+        'Part (i)(a) — Relational Algebra (Division `÷` + Set Difference `-`) [3M]: Build step-by-step using intermediate relations:\n  1. Projects with budget > ₹10,00,000:\n     `HighBudgetProj ← π_{ProjectID}( σ_{Budget > 1000000}(PROJECT) )`\n  2. Researchers participating in **EVERY** high-budget project (Division `÷`):\n     `AllHighBudgetRes ← π_{ResearcherID, ProjectID}(PARTICIPATION) ÷ HighBudgetProj`\n  3. Projects having at least one publication with `CitationCount < 5`:\n     `LowCiteProj ← π_{ProjectID}( σ_{CitationCount < 5}(PUBLICATION) )`\n  4. Researchers who participated in any low-citation project:\n     `ExcludedRes ← π_{ResearcherID}( PARTICIPATION ⋈ LowCiteProj )`\n  5. Subtract excluded researchers and join with `RESEARCHER` for names:\n     **`Result ← π_{ResearcherName}( (AllHighBudgetRes − ExcludedRes) ⋈ RESEARCHER )`**\n  *(SQL equivalent for double-checking: `NOT EXISTS` high-budget project missing from `PARTICIPATION`, AND `NOT EXISTS` participated project in `PUBLICATION` with `CitationCount < 5`.)*',
+        'Part (i)(b) — Relational Algebra (Extended Grouping/Aggregation `ℑ`) [3M]:\n  1. Group `PARTICIPATION` by `ResearcherID` computing `ProjCount` and `TotalHrs`:\n     `ResStats(ResearcherID, ProjCount, TotalHrs) ← _{ResearcherID} ℑ_{COUNT(DISTINCT ProjectID), SUM(HoursWorked)}(PARTICIPATION)`\n  2. Filter researchers with `ProjCount >= 2` AND `TotalHrs > 100`:\n     `QualRes ← σ_{ProjCount >= 2 ∧ TotalHrs > 100}(ResStats)`\n  3. Project researcher names:\n     **`Result ← π_{ResearcherName}( QualRes ⋈ RESEARCHER )`**\n  *(SQL equivalent: `SELECT r.ResearcherName FROM RESEARCHER r JOIN PARTICIPATION p ON r.ResearcherID = p.ResearcherID GROUP BY r.ResearcherID, r.ResearcherName HAVING COUNT(DISTINCT p.ProjectID) >= 2 AND SUM(p.HoursWorked) > 100;`)*',
+        'Part (ii)(a) — LSM Tree Merge Compaction (`L0 ∪ L1`) [2M]: Perform a two-pointer sorted merge of `L0 = {10, 20, 30, 40}` and `L1 = {5, 15, 20, 25, 35, 45}`:\n  • Compare `10` vs `5` -> emit `5`\n  • Compare `10` vs `15` -> emit `10`\n  • Compare `20` vs `15` -> emit `15`\n  • Compare `20` vs `20` -> **Duplicate Key!** Retain **`20` from `L0`** (newer version) and discard `20` from `L1`\n  • Compare `30` vs `25` -> emit `25`\n  • Compare `30` vs `35` -> emit `30`\n  • Compare `40` vs `35` -> emit `35`\n  • Compare `40` vs `45` -> emit `40`, then emit remaining `45`.\n  • **Final Compacted Sorted Sequence:** **`{5, 10, 15, 20 (from L0), 25, 30, 35, 40, 45}`** (9 unique keys).',
+        'Part (ii)(b) — Two Advantages of LSM Trees for Write-Intensive Workloads [2M]:\n  1. **Sequential Disk I/O Instead of Random Writes:** All incoming inserts/updates/deletes append sequentially to the WAL and in-memory **MemTable**, then flush as immutable sorted SSTables — completely eliminating expensive random disk seeks incurred by in-place B+ tree page updates.\n  2. **High Write Throughput & Space Efficiency:** Batching writes in RAM and merging via background sequential compaction amortizes disk I/O, supports high ingestion rates (e.g., RocksDB, Cassandra, LevelDB), and produces tightly packed sorted blocks with better compression and zero page fragmentation.',
+      ],
+    },
+  },
+  {
+    qNo: 'Q5',
+    marks: 10,
+    section: 'Section I (7 × 10M)',
+    co: 'CO3',
+    bl: 'K4',
+    moduleId: 'm4',
+    topicId: 'm4-t2',
+    topicTitle: 'Concurrency Problems & Schedule Classification (with m4-t3 Serializability)',
+    patternOrigin: 'VIT Chennai FAT · Slot D1+TD1 (CH2026270101726) · Section I · Q05 [4 × 2.5M = 10M, CO3/K4]',
+    primary: {
+      label: '6-Class Schedule Classification (Serializable, Conflict, View, Recoverable, ACA & Strict)',
+      promptIntro:
+        'Consider the following classes of schedules: serializable, conflict-serializable, view-serializable, recoverable, avoids-cascading-aborts (ACA), and strict. For each of the following schedules, state which of the preceding classes it belongs to and trace your reasoning based on the listed actions.',
+      schemaOrData:
+        '(a) T1:W(X), T2:R(X), T1:W(X), T2:Commit, T1:Commit\n(b) T1:W(X), T2:R(X), T1:W(X), T2:Commit, T1:Abort\n(c) T2:R(X), T3:W(X), T3:Commit, T1:W(Y), T1:Commit, T2:R(Y), T2:W(Z), T2:Commit\n(d) T1:R(X), T2:W(X), T2:Commit, T1:W(X), T1:Commit, T3:R(X), T3:Commit',
+      subQuestions: [
+        {
+          part: 'a',
+          marks: 2.5,
+          text: 'Classify schedule (a): T1:W(X), T2:R(X), T1:W(X), T2:Commit, T1:Commit.',
+        },
+        {
+          part: 'b',
+          marks: 2.5,
+          text: 'Classify schedule (b): T1:W(X), T2:R(X), T1:W(X), T2:Commit, T1:Abort.',
+        },
+        {
+          part: 'c',
+          marks: 2.5,
+          text: 'Classify schedule (c): T2:R(X), T3:W(X), T3:Commit, T1:W(Y), T1:Commit, T2:R(Y), T2:W(Z), T2:Commit.',
+        },
+        {
+          part: 'd',
+          marks: 2.5,
+          text: 'Classify schedule (d): T1:R(X), T2:W(X), T2:Commit, T1:W(X), T1:Commit, T3:R(X), T3:Commit.',
+        },
+      ],
+      solutionSteps: [
+        'Schedule (a): `T1:W(X), T2:R(X), T1:W(X), T2:Commit, T1:Commit` [2.5M]:\n  • **Conflict Serializability:** Conflicts `T1:W1(X) -> T2:R(X)` (`T1 -> T2`) and `T2:R(X) -> T1:W2(X)` (`T2 -> T1`) create a **cycle `T1 <-> T2`** -> **NOT Conflict-Serializable**.\n  • **View Serializability & Serializability:** `T2` reads the *intermediate* value written by `T1`’s first write `W1(X)` before `T1` overwrites `X` with `W2(X)`. In serial `T1 -> T2`, `T2` reads `T1`’s *final* write `W2(X)`; in serial `T2 -> T1`, `T2` reads initial `X₀`. No serial schedule lets `T2` see `T1`’s intermediate value -> **NOT View-Serializable, NOT Serializable**.\n  • **Recoverability / ACA / Strict:** `T2` reads uncommitted `X` written by `T1` (**Dirty Read**) and **commits BEFORE `T1` commits** (`T2:Commit` precedes `T1:Commit`) -> **NOT Recoverable, NOT ACA, NOT Strict**.\n  • **Verdict (a):** Belongs to **NONE of the 6 classes**.',
+        'Schedule (b): `T1:W(X), T2:R(X), T1:W(X), T2:Commit, T1:Abort` [2.5M]:\n  • **Recoverability / ACA / Strict:** `T2` reads uncommitted `X` from `T1` and commits **before** `T1` aborts — an unrecoverable dirty read (cannot roll back committed `T2`) -> **NOT Recoverable, NOT ACA, NOT Strict**.\n  • **Serializability (Textbook Committed-Projection Nuance — Ramakrishnan & Gehrke Ex. 17.2):** Because `T1` **aborts**, the committed projection `C(S)` contains only `{T2:R(X), T2:Commit}`, which is trivially equivalent to a serial schedule of committed transactions -> technically **Conflict-Serializable, View-Serializable, and Serializable on `C(S)`** *(note: if an evaluator ignores abort removal and checks raw operations `W1->R2->W1`, the cycle `T1 <-> T2` fails serializability too — stating BOTH the committed-projection rule AND the unrecoverable dirty-read failure secures full 2.5/2.5 marks!)*.',
+        'Schedule (c): `T2:R(X), T3:W(X), T3:Commit, T1:W(Y), T1:Commit, T2:R(Y), T2:W(Z), T2:Commit` [2.5M]:\n  • **Conflict Serializability:** Conflicting pairs: `T2:R(X) -> T3:W(X)` gives `T2 -> T3`; `T1:W(Y) -> T2:R(Y)` gives `T1 -> T2`. Precedence graph `T1 -> T2 -> T3` is **ACYCLIC** -> **Conflict-Serializable** (equivalent serial order **`T1 -> T2 -> T3`**), therefore also **View-Serializable** and **Serializable**.\n  • **Strict / ACA / Recoverable:** Check every read/write on previously written data: `T2:R(Y)` occurs *after* `T1:Commit` (no dirty read); `T3:W(X)` writes `X` which was only *read* by `T2` (never written by `T2`, so no uncommitted overwrite); `T2:W(Z)` is the only access to `Z`. Hence **Strict** -> automatically **ACA** and **Recoverable**.\n  • **Verdict (c):** Belongs to **ALL 6 classes** (`Strict`, `ACA`, `Recoverable`, `Conflict-Serializable`, `View-Serializable`, `Serializable`).',
+        'Schedule (d): `T1:R(X), T2:W(X), T2:Commit, T1:W(X), T1:Commit, T3:R(X), T3:Commit` [2.5M]:\n  • **Conflict Serializability:** `T1:R(X) -> T2:W(X)` (`T1 -> T2`) and `T2:W(X) -> T1:W(X)` (`T2 -> T1`) form cycle **`T1 <-> T2`** -> **NOT Conflict-Serializable**.\n  • **View Serializability & Serializability:** `T1` performs the initial read of `X` (so `T1` must precede `T2` in any view-equivalent serial schedule), yet `T1` also performs the final write of `X` (requiring `T2` to precede `T1`!). Contradiction -> **NOT View-Serializable, NOT Serializable**.\n  • **Strict / ACA / Recoverable:** `T1:W(X)` overwrites `T2:W(X)` **after** `T2:Commit`, and `T3:R(X)` reads `T1:W(X)` **after** `T1:Commit`. Neither a read nor a write touches any uncommitted write -> **Strict**, therefore also **ACA** and **Recoverable**.\n  • **Verdict (d):** **`Strict`, `Avoids-Cascading-Aborts (ACA)`, and `Recoverable` ONLY** (NOT serializable, NOT conflict-serializable, NOT view-serializable).',
+      ],
+    },
+  },
+  {
+    qNo: 'Q6',
+    marks: 10,
+    section: 'Section I (7 × 10M)',
+    co: 'CO4',
+    bl: 'K4',
+    moduleId: 'm4',
+    topicId: 'm4-t5',
+    topicTitle: 'Timestamp Ordering & Multiple Granularity Locking (with m4-t4 2PL)',
+    patternOrigin: 'VIT Chennai FAT · Slot D1+TD1 (CH2026270101726) · Section I · Q06 [5M + 5M = 10M, CO4/K4]',
+    primary: {
+      label: 'Strict 2PL & Lock-Upgrade Deadlock + Basic Timestamp Ordering vs. Thomas’s Write Rule',
+      promptIntro:
+        'Part (a) analyzes early lock release under basic 2PL, Strict 2PL protection, and lock-upgrade deadlocks. Part (b) compares Basic Timestamp Ordering against Thomas’s Write Rule on a 3-transaction schedule.',
+      schemaOrData:
+        '(b) Timestamps: TS(T1) = 5, TS(T2) = 15, TS(T3) = 25\nInitial RTS = 0, WTS = 0 for X, Y, Z\nSchedule: r1(X); w3(X); w2(X); r2(Y); w1(Y); r3(Z)',
+      subQuestions: [
+        {
+          part: 'a-i',
+          marks: 2,
+          text: 'T1 write-locks A, reads & writes A, releases the lock early (planning to lock B later). T2 read-locks A, reads T1’s value, and commits. T1 later aborts. Trace the sequence of events and show how T1’s abort forces T2 to roll back.',
+        },
+        {
+          part: 'a-ii',
+          marks: 2,
+          text: 'Explain how Strict 2PL removes this problem.',
+        },
+        {
+          part: 'a-iii',
+          marks: 1,
+          text: 'Two transactions each hold lock-S(Q) and both request an upgrade to lock-X(Q). Analyze the outcome, then propose a modification to the locking protocol that prevents it.',
+        },
+        {
+          part: 'b-i',
+          marks: 2,
+          text: 'Execute r1(X); w3(X); w2(X); r2(Y); w1(Y); r3(Z) under Basic Timestamp Ordering. Record RTS/WTS after each step, identify which transaction(s) are rolled back, and state the rule that triggers each rollback.',
+        },
+        {
+          part: 'b-ii',
+          marks: 2,
+          text: 'Re-execute the same schedule using Thomas’s Write Rule. Identify which write is ignored and which transaction is still rolled back, with the reason.',
+        },
+        {
+          part: 'b-iii',
+          marks: 1,
+          text: 'Compare the two executions and justify your observations.',
+        },
+      ],
+      solutionSteps: [
+        'Part (a)(i) — Trace of Early Lock Release & Cascading Rollback [2M]:\n  1. `T1`: `lock-X(A)` -> `read(A)` -> `write(A)` (updates `A` to uncommitted value `A′`) -> `unlock(A)` early *(note: releasing `A` starts T1’s shrinking phase, so Basic 2PL actually forbids `T1` from later locking `B`; releasing early breaks 2PL AND exposes dirty data)*.\n  2. `T2`: `lock-S(A)` -> `read(A)` (reads dirty `A′`) -> `unlock(A)` -> **`COMMIT`**.\n  3. `T1`: encounters failure / abort -> **`ABORT(T1)`** restores `A` back to its old value `A₀`.\n  4. **Failure:** Because `T2` read uncommitted `A′` from `T1`, `T1`’s abort logically requires **cascading rollback of `T2`** — which is **impossible** because `T2` already committed (violating Durability & creating a **Non-Recoverable Schedule**!).',
+        'Part (a)(ii) — How Strict 2PL Removes This Problem [2M]:\n  • **Strict 2PL Rule:** In addition to 2PL’s growing/shrinking phases, a transaction must **hold all Exclusive (`X`) locks until it either `COMMIT`s or `ABORT`s**.\n  • Consequently, `T1` keeps `lock-X(A)` until its final `ABORT`. When `T2` requests `lock-S(A)`, `T2` is **blocked (WAIT)** until `T1` finishes and restores `A₀`. Thus `T2` can never read uncommitted data — guaranteeing **Strict, Cascadeless (ACA), and Recoverable** schedules.',
+        'Part (a)(iii) — Lock-Upgrade Deadlock & Protocol Fix [1M]:\n  • **Outcome:** **Deadlock!** `T1` holds `S(Q)` and waits for `T2` to release `S(Q)` so `T1` can upgrade to `X(Q)`; simultaneously `T2` holds `S(Q)` and waits for `T1` to release `S(Q)` -> circular wait `T1 <-> T2`.\n  • **Prevention Modification:** Introduce **Update Locks (`lock-U(Q)`)** — compatible with `S` locks, incompatible with other `U` or `X` locks, and **only a `U` lock may upgrade to `X`** (so at most one transaction can ever intend to upgrade on `Q`). *(Alternatively, apply Wait-Die / Wound-Wait deadlock prevention or acquire `lock-X(Q)` upfront.)*',
+        'Part (b)(i) — Basic Timestamp Ordering Trace (`TS(T1)=5, TS(T2)=15, TS(T3)=25`) [2M]:\n| Step | Operation | Rule Check | Action | RTS/WTS After Step |\n|---|---|---|---|---|\n| 1 | `r1(X)` | `TS(T1)=5 >= WTS(X)=0` | **Allowed** | `RTS(X)=5, WTS(X)=0` |\n| 2 | `w3(X)` | `TS(T3)=25 >= RTS(X)=5` & `>= WTS(X)=0` | **Allowed** | `RTS(X)=5, WTS(X)=25` |\n| 3 | `w2(X)` | `TS(T2)=15 < WTS(X)=25` | **ROLLBACK T2!** (Write too late: `TS(T2) < WTS(X)`) | `RTS(X)=5, WTS(X)=25` |\n| 4 | `r2(Y)` | `T2` already aborted | **Skipped** | `RTS(Y)=0, WTS(Y)=0` |\n| 5 | `w1(Y)` | `TS(T1)=5 >= RTS(Y)=0` & `>= WTS(Y)=0` | **Allowed** | `RTS(Y)=0, WTS(Y)=5` |\n| 6 | `r3(Z)` | `TS(T3)=25 >= WTS(Z)=0` | **Allowed** | `RTS(Z)=25, WTS(Z)=0` |\n  • **Result:** **`T2` is rolled back** at `w2(X)` because `TS(T2)=15 < WTS(X)=25` (Basic TO write rule). *(Note: if operations are evaluated independently without skipping `r2(Y)` after T2’s abort, `r2(Y)` would set `RTS(Y)=15`, which would then also roll back `T1` at `w1(Y)` since `TS(T1)=5 < RTS(Y)=15`.)*',
+        'Part (b)(ii) — Thomas’s Write Rule Trace [2M]:\n| Step | Operation | Rule Check | Action | RTS/WTS After Step |\n|---|---|---|---|---|\n| 1 | `r1(X)` | `5 >= WTS(X)=0` | **Allowed** | `RTS(X)=5, WTS(X)=0` |\n| 2 | `w3(X)` | `25 >= 5` & `25 >= 0` | **Allowed** | `RTS(X)=5, WTS(X)=25` |\n| 3 | `w2(X)` | `TS(T2)=15 >= RTS(X)=5` AND `15 < WTS(X)=25` | **IGNORED** (Thomas’s Write Rule: obsolete write, `T2` continues!) | `RTS(X)=5, WTS(X)=25` |\n| 4 | `r2(Y)` | `TS(T2)=15 >= WTS(Y)=0` | **Allowed** | `RTS(Y)=15, WTS(Y)=0` |\n| 5 | `w1(Y)` | `TS(T1)=5 < RTS(Y)=15` | **ROLLBACK T1!** (Read-timestamp violation: `T2` already read older `Y`) | `RTS(Y)=15, WTS(Y)=0` |\n| 6 | `r3(Z)` | `TS(T3)=25 >= WTS(Z)=0` | **Allowed** | `RTS(Z)=25, WTS(Z)=0` |\n  • **Ignored Write:** **`w2(X)`** is ignored as an obsolete write (T3 with larger timestamp 25 already overwrote X, and no transaction between TS 15 and 25 read X).\n  • **Still Rolled Back:** **`T1`** is rolled back at `w1(Y)` because `TS(T1) = 5 < RTS(Y) = 15` — Thomas’s Write Rule NEVER ignores a write when a younger transaction has already read the item!',
+        'Part (b)(iii) — Comparison & Justification [1M]: Basic TO enforces strict **conflict serializability**, aborting `T2` immediately on the obsolete write `w2(X)` (which prevents `r2(Y)` from running, sparing `T1`). Thomas’s Write Rule relaxes this to **view serializability** by safely ignoring obsolete write `w2(X)` so `T2` survives — yet `T2`’s subsequent read `r2(Y)` raises `RTS(Y)=15`, which still forces `T1` to abort on `w1(Y)` to preserve serial-equivalent read semantics (`T1 -> T2 -> T3`).',
+      ],
+    },
+  },
+  {
+    qNo: 'Q7',
+    marks: 10,
+    section: 'Section I (7 × 10M)',
+    co: 'CO2',
+    bl: 'K4',
+    moduleId: 'm2',
+    topicId: 'm2-t6',
+    topicTitle: 'Multivalued (4NF) & Join Dependencies (5NF) (Full 1NF–5NF Ladder)',
+    patternOrigin: 'VIT Chennai FAT · Slot D1+TD1 (CH2026270101726) · Section I · Q07 [2M + 2M + 3M + 3M = 10M, CO2/K4]',
+    primary: {
+      label: 'Multispecialty Hospital Full Normalization Ladder: Anomalies & 1NF → 2NF → 3NF → BCNF → 4NF → 5NF',
+      promptIntro:
+        'A multispecialty hospital maintains a consolidated relation to record patient consultations, prescribed medicines, diagnostic tests, and the doctors responsible for patient care:',
+      schemaOrData:
+        'HOSPITAL_CARE(PatientID, PatientName, DoctorID, DoctorName, SpecialtyID, SpecialtyName, MedicineID, TestID)\n\nSample Rows:\n| P101 | Ananya  | D01 | Dr. Meera | S01 | Cardiology | M01, M02 | T01      |\n| P102 | Karthik | D02 | Dr. Ravi  | S02 | Neurology  | M03      | T02, T03 |\n| P103 | Nila    | D01 | Dr. Meera | S01 | Cardiology | M01      | T01      |\n\nBusiness Rules:\n• PatientID -> PatientName\n• DoctorID -> DoctorName, SpecialtyID\n• SpecialtyID -> SpecialtyName\n• A patient may have multiple medicines and multiple diagnostic tests independently.\n• 3-way rule: (Doctor, Patient, Medicine) is valid iff (Doctor, Patient), (Patient, Medicine), and (Doctor, Medicine) pairs are all valid.',
+      subQuestions: [
+        {
+          part: 'a',
+          marks: 2,
+          text: 'Identify the anomalies that may arise in the given relation. Determine the highest normal form satisfied by the original relation and justify your answer with reference to the atomicity of attribute values.',
+        },
+        {
+          part: 'b',
+          marks: 2,
+          text: 'Derive the relevant functional dependencies and candidate keys from the stated business rules. Identify the dependencies responsible for violations of 2NF, 3NF, and BCNF, and state the appropriate decompositions at each stage.',
+        },
+        {
+          part: 'c',
+          marks: 3,
+          text: 'Identify the relevant multivalued dependencies (MVDs). Decompose the relation into 4NF and justify the decomposition using the identified MVDs.',
+        },
+        {
+          part: 'd',
+          marks: 3,
+          text: 'Identify the applicable join dependency (JD) arising from the stated three-way relationship constraint. Specify the required decomposition and justify whether the resulting relations satisfy 5NF.',
+        },
+      ],
+      solutionSteps: [
+        'Part (a) — Anomalies & Highest Normal Form [2M]:\n  • **Highest Normal Form = Unnormalized (0NF / Fails 1NF):** The cells `MedicineID = "M01, M02"` (Row 1) and `TestID = "T02, T03"` (Row 2) contain comma-separated **non-atomic multivalued entries**, violating the **First Normal Form (1NF)** atomicity requirement.\n  • **Three Modification Anomalies:**\n    1. *Insertion Anomaly:* Cannot register a new doctor (`D03`) or specialty (`S03`) until they consult a patient with a medicine and test.\n    2. *Update Anomaly:* Renaming `Dr. Meera` or `Cardiology` requires editing every consultation row for `D01` (risking inconsistent doctor/specialty names).\n    3. *Deletion Anomaly:* Deleting `P102`’s consultation row permanently loses all record of `Dr. Ravi (D02)` and `Neurology (S02)`.',
+        'Part (b) — FDs, Candidate Key & 1NF -> 2NF -> 3NF -> BCNF Decompositions [2M]:\n  • **1NF:** Flatten multivalued cells into atomic rows -> `HOSPITAL_1NF(PatientID, PatientName, DoctorID, DoctorName, SpecialtyID, SpecialtyName, MedicineID, TestID)`.\n  • **Functional Dependencies (FDs):**\n    • `FD1: PatientID -> PatientName`\n    • `FD2: DoctorID -> DoctorName, SpecialtyID`\n    • `FD3: SpecialtyID -> SpecialtyName`\n  • **Candidate Key (after 1NF):** **`{PatientID, DoctorID, MedicineID, TestID}`** (all 4 attributes never appear on any RHS, and their closure yields all 8 attributes).\n  • **2NF Violations (Partial Dependencies):** `PatientID -> PatientName` and `DoctorID -> DoctorName, SpecialtyID, SpecialtyName` depend on *proper subsets* of the composite key. **2NF Decomposition:**\n    • `PATIENT(PatientID [PK], PatientName)`\n    • `DOCTOR_SPEC(DoctorID [PK], DoctorName, SpecialtyID, SpecialtyName)`\n    • `CARE(PatientID [PK], DoctorID [PK], MedicineID [PK], TestID [PK])`\n  • **3NF & BCNF Violation (Transitive Dependency):** Inside `DOCTOR_SPEC`, `DoctorID -> SpecialtyID -> SpecialtyName` (`SpecialtyID` is non-prime & not a superkey). **3NF / BCNF Decomposition:**\n    • **`PATIENT(PatientID [PK], PatientName)`**\n    • **`DOCTOR(DoctorID [PK], DoctorName, SpecialtyID [FK -> SPECIALTY])`**\n    • **`SPECIALTY(SpecialtyID [PK], SpecialtyName)`**\n    • **`CARE(PatientID [PK], DoctorID [PK], MedicineID [PK], TestID [PK])`** *(all-key -> trivially in BCNF!)*',
+        'Part (c) — Multivalued Dependencies (MVDs) & 4NF Decomposition [3M]:\n  • Inside the all-key relation `CARE(PatientID, DoctorID, MedicineID, TestID)`, a patient’s diagnostic tests are completely independent of their medicines and doctors, creating non-trivial MVDs:\n    • **`PatientID ->> TestID`** and **`PatientID ->> (DoctorID, MedicineID)`** *(equivalently `PatientID ->> MedicineID` and `PatientID ->> TestID` are independent)*.\n  • **4NF Violation:** `PatientID` is **NOT a superkey** of `CARE`, causing Cartesian-product redundancy (every new test must be duplicated across every `(DoctorID, MedicineID)` row of that patient).\n  • **4NF Decomposition:** Split `CARE` along `PatientID ->> TestID`:\n    • **`PATIENT_TEST(PatientID [PK, FK], TestID [PK])`**\n    • **`DOC_PAT_MED(DoctorID [PK, FK], PatientID [PK, FK], MedicineID [PK])`**\n  • **Justification:** By the MVD Lossless-Join Theorem, since `PatientID ->> TestID` holds on `CARE`, `PATIENT_TEST ⋈ DOC_PAT_MED = CARE` with zero spurious tuples, and neither resulting table has a non-trivial MVD whose LHS is not a superkey -> **Both satisfy 4NF**.',
+        'Part (d) — Join Dependency (JD) & 5NF (PJNF) Decomposition [3M]:\n  • **Join Dependency:** The 3-way business rule on `DOC_PAT_MED(DoctorID, PatientID, MedicineID)` states that `(d, p, m) ∈ DOC_PAT_MED` iff `(d, p)`, `(p, m)`, and `(d, m)` are each valid pairs. This defines the non-trivial cyclic Join Dependency:\n    • **`JD = *( (DoctorID, PatientID), (PatientID, MedicineID), (DoctorID, MedicineID) )`**\n  • Since none of the three binary projections is a superkey of `DOC_PAT_MED`, `DOC_PAT_MED` **violates 5NF**.\n  • **5NF Decomposition:** Project `DOC_PAT_MED` onto the three binary relations:\n    1. **`DOCTOR_PATIENT(DoctorID [PK, FK], PatientID [PK, FK])`**\n    2. **`PATIENT_MEDICINE(PatientID [PK, FK], MedicineID [PK])`**\n    3. **`DOCTOR_MEDICINE(DoctorID [PK, FK], MedicineID [PK])`**\n  • **5NF Justification:** Joining all three relations (`DOCTOR_PATIENT ⋈ PATIENT_MEDICINE ⋈ DOCTOR_MEDICINE`) losslessly reconstructs `DOC_PAT_MED` by the stated 3-way constraint. Every resulting relation (along with `PATIENT`, `DOCTOR`, `SPECIALTY`, `PATIENT_TEST`) is in BCNF and has at most 2 key attributes (binary all-key), so **no further non-trivial join dependency can exist** -> the entire schema strictly satisfies **5NF (Project-Join Normal Form)**.',
+      ],
+    },
+  },
+  {
+    qNo: 'Q8',
+    marks: 15,
+    section: 'Section II (2 × 15M)',
+    co: 'CO1',
+    bl: 'K4',
+    moduleId: 'm2',
+    topicId: 'm2-t3',
+    topicTitle: '7-Step ER/EER-to-Relational Mapping (with m2-t4 FD Closure & Keys)',
+    patternOrigin: 'VIT Chennai FAT · Slot D1+TD1 (CH2026270101726) · Section II · Q08 [8M + 4M + 3M = 15M, CO1/K4]',
+    primary: {
+      label: 'Section II (15M): Hotel ER-to-Relational Schema Mapping + R(P,Q,R,S,T) Closure (PR)+ & Candidate Keys',
+      promptIntro:
+        'Section II Question 8 combines an 8-mark ER-to-Relational Schema mapping (from the Hotel Management ER diagram below) with a 7-mark Functional Dependency closure and Candidate Key derivation.',
+      schemaOrData:
+        '(i) Hotel ER Diagram Entities & Relationships:\n• Strong Entities: Guest (G_Id, Name(F_Name, M_Name, L_Name), Country, Address, Reg_Date, Tel, Gender, NIC_NO), Invoice (Invoice_Id, Date, Tot_R_Charge, Net_Amount, A_Payment, Tax, VAT, Tot_Amt, Tot_F_charge), Payment (P_Id, Net_Amount, A_Payment, Date, Type, Tot_Amount), Comments_and_Complaints (C_ID, Description, Date, Type), Facilities (F_ID, Date, Status, Description, Charge), Reservation (RE_ID, No_of_Nights, Res_Date, No_of_Rooms, R_Type), Room (R_ID, Type, Status, Charge).\n• Relationships: Invoice (1) —Has— (1) Payment; Guest (1) —Get— (M) Invoice; Guest (1) —Do— (M) == Comments_and_Complaints [Total Participation on Comments side]; Guest (1) —Do— (M) Reservation; Facilities (1) —Include— (M) Reservation; Reservation (M) —Include— (M) Room.\n\n(ii) Relation: R(P, Q, R, S, T)\nFunctional Dependencies: F = { P -> Q,  Q -> R,  PR -> S,  S -> T,  T -> Q }',
+      referenceImageUrl: '/assets/aistudio/WhatsApp_Image_2026-11-21_at_12.20.10_PM__1__8d647b6d.jpeg',
+      referenceImageCaption: 'Original VIT Chennai D1+TD1 Question Paper Page 3 — Q08(i) Hotel Management ER Diagram.',
+      subQuestions: [
+        {
+          part: 'i',
+          marks: 8,
+          text: 'Map the given Hotel Management ER diagram to a Relational Schema with proper explanation. Specify all constraints (Primary Key, Foreign Key, UNIQUE, NOT NULL / Total Participation, and Composite Attribute flattening) associated with each relation.',
+        },
+        {
+          part: 'ii-a',
+          marks: 4,
+          text: 'For R(P, Q, R, S, T) with F = {P->Q, Q->R, PR->S, S->T, T->Q}, determine the attribute closure (PR)+ using the given functional dependencies and explain each step of the process.',
+        },
+        {
+          part: 'ii-b',
+          marks: 3,
+          text: 'Identify all the candidate keys of the relation R using the given functional dependencies.',
+        },
+      ],
+      solutionSteps: [
+        'Part (i) — 7-Step ER-to-Relational Mapping & Constraints (8 Tables Total) [8M]:\n  1. **Step 1 (Strong Entities + Composite Attribute Flattening):** Map every regular entity to a table; flatten composite `Guest.Name` into atomic columns `F_Name`, `M_Name`, `L_Name`:\n     • **`GUEST`**(`G_Id` [PK], `F_Name` NOT NULL, `M_Name`, `L_Name` NOT NULL, `Country`, `Address`, `Reg_Date`, `Tel`, `Gender`, `NIC_NO` UNIQUE)\n     • **`FACILITIES`**(`F_ID` [PK], `Date`, `Status`, `Description`, `Charge` CHECK (Charge >= 0))\n     • **`ROOM`**(`R_ID` [PK], `Type`, `Status`, `Charge` CHECK (Charge >= 0))\n  2. **Step 3 (Binary 1:1 Relationship `Invoice —Has— Payment`):** Place `Invoice_Id` as a **`FOREIGN KEY` with `UNIQUE`** constraint inside `PAYMENT` (enforcing strictly 1:1 pairing):\n     • **`INVOICE`**(`Invoice_Id` [PK], `Date`, `Tot_R_Charge`, `Net_Amount`, `A_Payment`, `Tax`, `VAT`, `Tot_Amt`, `Tot_F_charge`, `G_Id` [FK -> `GUEST(G_Id)`])\n     • **`PAYMENT`**(`P_Id` [PK], `Net_Amount`, `A_Payment`, `Date`, `Type`, `Tot_Amount`, `Invoice_Id` [FK -> `INVOICE(Invoice_Id)`, **UNIQUE**])\n  3. **Step 4 (Binary 1:M Relationships — Place FK on the `M`-side!):**\n     • `Guest (1) —Get— (M) Invoice` -> `G_Id` FK added to **`INVOICE`** above.\n     • `Guest (1) —Do— (M) == Comments_and_Complaints` -> Double line indicates **Total Participation** of `Comments_and_Complaints`! Enforce via **`NOT NULL`** on the FK:\n       • **`COMMENTS_AND_COMPLAINTS`**(`C_ID` [PK], `Description`, `Date`, `Type`, `G_Id` [FK -> `GUEST(G_Id)` **NOT NULL**])\n     • `Guest (1) —Do— (M) Reservation` AND `Facilities (1) —Include— (M) Reservation` -> Both `G_Id` and `F_ID` FKs placed on the `M`-side (`RESERVATION`):\n       • **`RESERVATION`**(`RE_ID` [PK], `No_of_Nights`, `Res_Date`, `No_of_Rooms`, `R_Type`, `G_Id` [FK -> `GUEST(G_Id)`], `F_ID` [FK -> `FACILITIES(F_ID)`])\n  4. **Step 5 (Binary M:M Relationship `Reservation (M) —Include— (M) Room`):** Create a dedicated **junction relation** whose composite Primary Key combines both FKs:\n     • **`RESERVATION_ROOM`**(`RE_ID` [PK, FK -> `RESERVATION(RE_ID)`], `R_ID` [PK, FK -> `ROOM(R_ID)`])\n  • **Key Constraints Summary:** Entity Integrity (`PK NOT NULL & UNIQUE` on all 8 tables), Referential Integrity (`ON DELETE RESTRICT/CASCADE` on every FK), 1:1 uniqueness (`PAYMENT.Invoice_Id UNIQUE`), Total Participation (`COMMENTS_AND_COMPLAINTS.G_Id NOT NULL`), and Domain checks on charges/dates.',
+        'Part (ii)(a) — Step-by-Step Attribute Closure `(PR)+` [4M]: Given `R(P, Q, R, S, T)` and `F = { P -> Q, Q -> R, PR -> S, S -> T, T -> Q }`:\n  • **Initialization:** `Result = {P, R}` (by Reflexivity).\n  • **Pass 1 — Apply `P -> Q`:** Since `P ⊆ {P, R}`, add `Q` -> `Result = {P, Q, R}`.\n  • **Pass 1 — Check `Q -> R`:** `Q ⊆ {P, Q, R}`, `R` already present (no change).\n  • **Pass 1 — Apply `PR -> S`:** Since `{P, R} ⊆ {P, Q, R}`, add `S` -> `Result = {P, Q, R, S}`.\n  • **Pass 1 — Apply `S -> T`:** Since `S ⊆ {P, Q, R, S}`, add `T` -> `Result = {P, Q, R, S, T}`.\n  • **Pass 1 — Check `T -> Q`:** `T ⊆ {P, Q, R, S, T}`, `Q` already present. All attributes of `R` are reached — algorithm terminates.\n  • **Final Result:** **`(PR)+ = {P, Q, R, S, T} = R`** (hence `PR` is a superkey).',
+        'Part (ii)(b) — Identify All Candidate Keys of `R` [3M]:\n  1. **Essential Attribute Check (LHS-only rule):** Inspect RHS of all FDs in `F`: RHS union = `{Q, R, S, T}`. Notice **`P` NEVER appears on the RHS** of any FD! Therefore, **`P` MUST be present in every Candidate Key**.\n  2. **Test minimal subset `{P}` alone:** Compute `(P)+`:\n     • Start: `{P}`\n     • Apply `P -> Q` -> `{P, Q}`\n     • Apply `Q -> R` -> `{P, Q, R}`\n     • Apply `PR -> S` (since `{P, R} ⊆ {P, Q, R}`) -> `{P, Q, R, S}`\n     • Apply `S -> T` -> **`{P, Q, R, S, T} = R`**!\n  3. **Uniqueness Proof:** Because `{P}` alone is already a superkey and EVERY superkey of `R` must contain `P`, any larger set containing `P` (including `PR`!) is a **non-minimal superkey**.\n  • **Final Answer:** The **ONLY Candidate Key of `R` is `{P}`**.',
+      ],
+    },
+  },
+  {
+    qNo: 'Q9',
+    marks: 15,
+    section: 'Section II (2 × 15M)',
+    co: 'CO5',
+    bl: 'K3',
+    moduleId: 'm5',
+    topicId: 'm5-t2',
+    topicTitle: 'Data Fragmentation, Replication & Allocation (with m5-t5 MapReduce)',
+    patternOrigin: 'VIT Chennai FAT · Slot D1+TD1 (CH2026270101726) · Section II · Q09 [8M + 7M = 15M, CO5/K3]',
+    primary: {
+      label: 'Section II (15M): 3-Campus University DDBMS Fragmentation & Replication + MapReduce Average Product Rating',
+      promptIntro:
+        'Section II Question 9 tests Distributed Database Design (fragmentation, allocation, and fault-tolerant replication across 3 university campuses) alongside a complete MapReduce analytical pipeline for e-commerce ratings.',
+      schemaOrData:
+        '(i) Centralized Relation: STUDENT(Student_ID, Name, Department, Campus, CGPA)\nSites: Chennai Campus, Vellore Campus, Bengaluru Campus + Central University Administration\n\n(ii) Input Dataset: Millions of customer reviews as (Review_ID, Product_ID, Rating)\nGoal: Compute Average Rating per Product_ID using MapReduce.',
+      subQuestions: [
+        {
+          part: 'i',
+          marks: 8,
+          text: 'A university has three campuses located in Chennai, Vellore, and Bengaluru, each maintaining student records in a centralized STUDENT(Student_ID, Name, Department, Campus, CGPA) relation. Each campus frequently accesses its own students’ records and the university administration requires access to records from all campuses. Design and justify an appropriate distributed database system using fragmentation and replication techniques to enhance query performance and ensure data availability during network failures.',
+        },
+        {
+          part: 'ii',
+          marks: 7,
+          text: 'An e-commerce company stores millions of customer reviews in a distributed system. Each review contains a Product_ID and a Rating. The company wants to calculate the average rating of each product using the MapReduce programming model. Propose a suitable MapReduce solution for this scenario.',
+        },
+      ],
+      diagramId: 'm5-mapreduce-pipeline',
+      diagramCaption: 'MapReduce Pipeline (Input Splits -> Map -> Local Combiner (sum, count) -> Shuffle & Sort -> Reduce -> Final Averages).',
+      solutionSteps: [
+        'Part (i) — 3-Campus University DDBMS Design (Fragmentation, Allocation & Replication) [8M]:\n  1. **Primary Horizontal Fragmentation on `Campus` [3M]:** Because every campus predominantly queries its own students’ rows while needing all columns (`Name, Department, CGPA`), apply **Horizontal Fragmentation**:\n     • `S_CHN = σ_{Campus = \'Chennai\'}(STUDENT)`\n     • `S_VEL = σ_{Campus = \'Vellore\'}(STUDENT)`\n     • `S_BLR = σ_{Campus = \'Bengaluru\'}(STUDENT)`\n     *Correctness Verification (mandatory in FAT!):*\n     • **Completeness:** Every student belongs to one of `{Chennai, Vellore, Bengaluru}` so no tuple is lost.\n     • **Reconstruction:** `STUDENT = S_CHN ∪ S_VEL ∪ S_BLR` (exact lossless union).\n     • **Disjointness:** `S_i ∩ S_j = ∅` for `i ≠ j` (a student belongs to only one campus).\n  2. **Fragment Allocation & Partial/Selective Replication Strategy [3M]:**\n     • **Primary Local Placement:** Store primary read/write fragment `S_CHN` at Chennai, `S_VEL` at Vellore, and `S_BLR` at Bengaluru -> **maximizes locality of reference** (~90%+ campus queries execute locally with zero WAN latency).\n     • **Selective Cross-Campus & Admin Replication:**\n       – Replicate read-only copies of all three fragments `(S_CHN, S_VEL, S_BLR)` at the **Central Administration Site** so university-wide CGPA/graduation reports run locally without slow 3-way distributed WAN unions.\n       – Maintain an asynchronous **peer standby replica** of each campus fragment at one neighbor campus (e.g., `S_CHN` backed up at Vellore, `S_VEL` at Bengaluru, `S_BLR` at Chennai).\n  3. **Performance & Fault-Tolerance Justification [2M]:**\n     • *Query Performance:* Local campus transactions avoid WAN bottlenecks; admin analytics scan local replicas in parallel.\n     • *Availability During Network Partitions:* If the WAN link between Chennai and Central Admin fails, Chennai students/faculty continue operating uninterrupted on local `S_CHN`, while Central Admin still serves read queries from its local replica (and standby peers take over if a campus server crashes). *Trade-off:* Writes propagate via asynchronous/primary-copy replication (eventual consistency for admin dashboards, strict consistency at each home campus).',
+        'Part (ii) — MapReduce Solution for Average Product Rating [7M]:\n  1. **Data Flow Overview:** Process reviews in 4 stages: **Map -> Combiner (Local Pre-Aggregation) -> Shuffle & Sort -> Reduce**.\n  2. **Map Function [2M]:** Reads each review record and emits `(Product_ID, (Rating, 1))`:\n```python\ndef map(review_id, record):\n    # record = (Product_ID, Rating)\n    emit(record.Product_ID, (record.Rating, 1))\n```\n  3. **Combiner Function (Critical Optimization — Why NOT Average Here!) [1.5M]:** Average is **NOT associative** (`avg(avg(5, 5), avg(1)) = 3.0 ≠ true avg 11/3 = 3.67`!). Therefore the Combiner must aggregate **`(local_sum, local_count)`** per `Product_ID` on each mapper node, slashing network shuffle traffic dramatically:\n```python\ndef combine(product_id, values):\n    local_sum, local_count = 0, 0\n    for (rating, count) in values:\n        local_sum += rating\n        local_count += count\n    emit(product_id, (local_sum, local_count))\n```\n  4. **Shuffle & Sort [1M]:** Framework partitions by `hash(Product_ID) mod R`, transfers all `(local_sum, local_count)` tuples for the same `Product_ID` to the same Reducer, and sorts by `Product_ID`.\n  5. **Reduce Function [1.5M]:** Sums all partial sums and partial counts to compute the exact weighted average:\n```python\ndef reduce(product_id, partial_pairs):\n    total_sum, total_count = 0, 0\n    for (s, c) in partial_pairs:\n        total_sum += s\n        total_count += c\n    avg_rating = total_sum / total_count\n    emit(product_id, avg_rating)\n```\n  6. **Worked Mini-Trace [1M]:** Suppose Split 1 has `(P1, 5), (P1, 4), (P2, 3)` and Split 2 has `(P1, 3), (P2, 5)`.\n     • Map + Combiner 1 emits: `P1 -> (9, 2)`, `P2 -> (3, 1)`.\n     • Map + Combiner 2 emits: `P1 -> (3, 1)`, `P2 -> (5, 1)`.\n     • Shuffle groups: `P1 -> [(9, 2), (3, 1)]`, `P2 -> [(3, 1), (5, 1)]`.\n     • Reduce outputs: **`(P1, 12/3 = 4.0)`**, **`(P2, 8/2 = 4.0)`**.',
+      ],
+    },
+  },
+];
+
 
 
